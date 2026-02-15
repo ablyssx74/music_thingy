@@ -6,6 +6,8 @@
 
 set -f
 
+OS_NAME=$(uname -s)
+
 xcleanup_thingy(){ 
 echo
 #[[ -e /tmp/bash_music_thingy.pid ]] && kill -1 $(</tmp/bash_music_thingy.pid) && rm /tmp/bash_music_thingy.pid
@@ -26,12 +28,36 @@ echo
 #}
 
 vol() {
-	  
+	  if [[ ${OS_NAME,,} == haiku ]]; then
   		  [[ $REPLY == + ]] && setvolume -i > /dev/null
   		  [[ $REPLY == - ]] && setvolume -d > /dev/null 
   		  [[ $REPLY == m ]] && setvolume -m > /dev/null
   		  [[ $REPLY == u ]] && setvolume -u > /dev/null
-  		  setvolume				
+  		  setvolume
+
+elif [[ ${OS_NAME,,} == linux ]]; then
+	for l in "$(amixer get Master)"
+		do
+			 l=${l// /_}  
+ 	         l=${l/_[/ }
+ 		 	l=${l/]_/ }
+  		 	l=($l)
+  		 	s="${l[5]}"
+  
+  		 		#Fix for raspberry pi *** maybe outdated 
+ 		 		[[ ${#s} -gt 3 ]] && s="${l[6]}"  
+
+  		  soundlevel=${s//%/}
+  		  inc_sound=$(($soundlevel + 5))
+  		  dec_sound=$(($soundlevel - 5))
+
+  		  [[ $REPLY == + ]] && amixer -q set Master $(($soundlevel + 5))% && s=$(($soundlevel + 5))%
+  		  [[ $REPLY == - ]] && amixer -q set Master $(($soundlevel - 5))% && s=$(($soundlevel - 5))%  
+  		  [[ $REPLY == m ]] && amixer -q set Master mute && s=Muted
+  		  [[ $REPLY == u ]] && amixer -q set Master unmute 
+  		  echo "${s}"  			
+	done
+fi
 } 
 
 	playlist="https://ice1.somafm.com/7soul-128-mp3#Seven Inch Soul - Vintage soul tracks from the original 45 RPM vinyl.
