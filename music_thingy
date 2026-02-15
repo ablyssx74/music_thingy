@@ -121,7 +121,7 @@ mapfile playlist <<< $playlist
 # Works good for things like KDE-connect and keyboard shortcuts to play music_thingy in the backend.
 # Examples "music_thingy https://ice2.somafm.com/secretagent-128-mp3" "music_thingy quit"  "music_thingy shuffle"  "music_thingy favorites"
 if [[ $1 ]];then
-        if [[ ${1,,} != quit && ${1,,} != shuffle && ${1,,} !=  favorites ]]; then         
+        if [[ ${1,,} != quit && ${1,,} != shuffle && ${1,,} != favorites && ${1,,} != del_favorite  && ${1,,} != add_favorite ]];then         
         xcleanup_thingy
         echo $BASHPID > /tmp/music_thingy.pid
         playlist="$1" 
@@ -140,9 +140,32 @@ if [[ $1 ]];then
 		tr=${tr[0]}
         mapfile playlist <<< $tr 
         fi 
+
+	    if [[ ${1,,} == add_favorite ]]; then  
+  		 	 xcleanup_thingy
+       		 echo $BASHPID > /tmp/music_thingy.pid
+        	 REPLY=a
+       		 nu="0-$((${#playlist[*]}-1))"
+			 shuffle="$(shuf -i $nu -n 1)"
+			 pl="${playlist[$shuffle]}"
+			 tr=(${pl//\\n/\/ })
+		     tr=${tr[0]}
+             mapfile playlist <<< $tr   
+	  	fi
+
+	 	if [[ ${1,,} == del_favorite ]]; then  
+  		 	 xcleanup_thingy
+       		 echo $BASHPID > /tmp/music_thingy.pid
+        	 REPLY=d
+       		 nu="0-$((${#playlist[*]}-1))"
+			 shuffle="$(shuf -i $nu -n 1)"
+			 pl="${playlist[$shuffle]}"
+			 tr=(${pl//\\n/\/ })
+		     tr=${tr[0]}
+             mapfile playlist <<< $tr  	
+		fi
         
-        if [[ ${1,,} == shuffle ]]; then
-    
+        if [[ ${1,,} == shuffle ]]; then    
         xcleanup_thingy
         echo $BASHPID > /tmp/music_thingy.pid
         REPLY=s
