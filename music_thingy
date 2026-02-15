@@ -279,8 +279,16 @@ startplaying
 
 while true
 	do
-	    [[ ! -d ${HOME}/config/settings/music_thingy ]] && mkdir ${HOME}/config/settings/music_thingy
-		[[ ! -e ${HOME}/config/settings/music_thingy/favorites ]] && touch ${HOME}/config/settings/music_thingy/favorites
+		if [[ ${OS_NAME,,} == haiku ]]; then
+	   		 [[ ! -d ${HOME}/config/settings/music_thingy ]] && mkdir ${HOME}/config/settings/music_thingy
+				 [[ ! -e ${HOME}/config/settings/music_thingy/favorites ]] && touch ${HOME}/config/settings/music_thingy/favorites
+				 favs="${HOME}/config/settings/music_thingy/favorites"
+
+       elif [[ ${OS_NAME,,} == linux ]]; then
+	   		 [[ ! -d ${HOME}/.config/music_thingy ]] && mkdir ${HOME}/.config/music_thingy
+				 [[ ! -e ${HOME}/.config/music_thingy/favorites ]] && touch ${HOME}/.config/music_thingy/favorites
+				 favs="${HOME}/.config/music_thingy/favorites"
+       fi
 		 player="mpv"		 
 		 BLUE="$(tput setaf 12)"    
 		 RED="$(tput setaf 9)"
@@ -288,13 +296,14 @@ while true
 		 NORM="$(tput setaf 15)"
 		 ORANGE="$(tput setaf 9)" 
 		 BLACK="$(tput setaf 234)" 
-		 REPLY=${REPLY,,}		 
-		 favs="${HOME}/config/settings/music_thingy/favorites"
+		 REPLY=${REPLY,,}		 		 
 		 pids="$(ps | grep music_thing)"	 
 		 x=($(${player%} --version))
-		 [[ -z ${x[0]} ]] && echo -e "\\n${ORANGE}${player}${RED} not installed. ${BLUE}Please install it with pkgman install mpv :-)\\n" && break
-		 #[[ -z ${x[0]} ]] && echo -e "\\n${ORANGE}${player}${RED} not installed. ${BLUE}Installing...:-)\\n" && pkgman install mpv
-	
+		if [[ ${OS_NAME,,} == haiku ]]; then
+				 [[ -z ${x[0]} ]] && echo -e "\\n${ORANGE}${player}${RED} not installed. ${BLUE}Please install it with pkgman install mpv. :-)\\n" && break
+        elif [[ ${OS_NAME,,} == linux ]]; then
+				 [[ -z ${x[0]} ]] && echo -e "\\n${ORANGE}${player}${RED} not installed. ${BLUE}Please install it with your OS package manager.  :-)\\n" && break
+		fi
 		 if [[ ${REPLY} == q ]];then
 			 echo -e "\\n\\n${BLUE}bye!\\n\\n"
 		 	 xcleanup_thingy
