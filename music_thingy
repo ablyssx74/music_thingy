@@ -9,6 +9,31 @@
 set -f
 
 OS_NAME=$(uname -s)
+		if [[ ${OS_NAME,,} == haiku ]]; then
+				 ConfigDir=${HOME}/config/settings/music_thingy
+	   		     [[ ! -d $ConfigDir ]] && mkdir $ConfigDir
+				 [[ ! -e $ConfigDir/favorites ]] && touch $ConfigDir/favorites
+				 [[ ! -e $ConfigDir/config ]] && touch $ConfigDir/config
+				 favs="$ConfigDir/favorites"
+				 config="$ConfigDir/config"
+				 if [[ ! -s $config ]];then
+				    echo -e "show_alerts=0" > $config
+				 fi
+
+       elif [[ ${OS_NAME,,} == linux ]]; then
+       			 ConfigDir=${HOME}/.config/music_thingy
+	   		 	 [[ ! -d $ConfigDir ]] && mkdir $ConfigDir
+				 [[ ! -e $ConfigDir/favorites ]] && touch $ConfigDir/favorites
+				 [[ ! -e $ConfigDir/config ]] && touch $ConfigDir/config
+				 favs="$ConfigDir/favorites"
+				 config="$ConfigDir/config"
+				 if [[ ! -s $config ]];then
+				    echo -e "show__kde_alerts=0" > $config
+				 fi
+
+       fi
+
+export $(< $config)
 
 xcleanup_thingy(){ 
 echo
@@ -104,14 +129,12 @@ https://ice6.somafm.com/thistle-128-mp3#ThistleRadio - Exploring music from Celt
 https://ice1.somafm.com/vaporwaves-128-mp3#Vaporwaves - All Vaporwave. All the time."
 
 if [[ ${OS_NAME,,} == haiku ]]; then
-	 [[ ! -d ${HOME}/config/settings/music_thingy ]] && mkdir ${HOME}/config/settings/music_thingy
-	 [[ ! -e ${HOME}/config/settings/music_thingy/playlist ]] && echo -n "${playlist[*]}" > ${HOME}/config/settings/music_thingy/playlist
-	  playlist="$(< ${HOME}/config/settings/music_thingy/playlist)"
+	 [[ ! -e $ConfigDir/playlist ]] && echo -n "${playlist[*]}" > $ConfigDir/playlist
+	  playlist="$(< $ConfigDir/playlist)"
 				 
 elif [[ ${OS_NAME,,} == linux ]]; then
-	 [[ ! -d ${HOME}/.config/music_thingy ]] && mkdir ${HOME}/.config/music_thingy
-	 [[ ! -e ${HOME}/.config/music_thingy/playlist ]] && echo -n "${playlist[*]}" > ${HOME}/config/settings/music_thingy/playlist
-	 playlist="${HOME}/.config/music_thingy/playlist"			 
+	 [[ ! -e $ConfigDir/playlist ]] && echo -n "${playlist[*]}" > $ConfigDir/playlist
+	 playlist="$ConfigDir/playlist"			 
 fi				 
 
 mapfile playlist <<< $playlist
@@ -121,71 +144,82 @@ mapfile playlist <<< $playlist
 # Works good for things like KDE-connect and keyboard shortcuts to play music_thingy in the backend.
 # Examples "music_thingy https://ice2.somafm.com/secretagent-128-mp3" "music_thingy quit"  "music_thingy shuffle"  "music_thingy favorites"
 if [[ $1 ]];then
-        if [[ ${1,,} != quit && ${1,,} != shuffle && ${1,,} != favorites && ${1,,} != del_favorite  && ${1,,} != add_favorite ]];then         
+        if [[ ${1,,} != quit && ${1,,} != shuffle && ${1,,} != favorites && ${1,,} != del_favorite  && ${1,,} != add_favorite && ${1,,} != inc_vol && ${1,,} != dec_vol ]];then         
         xcleanup_thingy
-        echo $BASHPID > /tmp/music_thingy.pid
+        echo $BASHPID > /tmp/music_thingy.pid 
         playlist="$1" 
         mapfile playlist <<< $playlist 
         fi
         
         if [[ ${1,,} == favorites ]]; then         
-        xcleanup_thingy 
-        echo $BASHPID > /tmp/music_thingy.pid
-        REPLY=f
-      	mapfile playlist < $favs
-		nu="0-$((${#playlist[*]}-1))"
-		shuffle="$(shuf -i $nu -n 1)"
-		pl="${playlist[$shuffle]}"
-		tr=(${pl//\\n/\/ })
-		tr=${tr[0]}
-        mapfile playlist <<< $tr 
+     	   xcleanup_thingy 
+     	   echo $BASHPID > /tmp/music_thingy.pid
+     	   REPLY=f
         fi 
 
-	    if [[ ${1,,} == add_favorite ]]; then  
-  		 	 xcleanup_thingy
-       		 echo $BASHPID > /tmp/music_thingy.pid
-        	 REPLY=a
-       		 nu="0-$((${#playlist[*]}-1))"
-			 shuffle="$(shuf -i $nu -n 1)"
-			 pl="${playlist[$shuffle]}"
-			 tr=(${pl//\\n/\/ })
-		     tr=${tr[0]}
-             mapfile playlist <<< $tr   
+	    if [[ ${1,,} == inc_vol ]]; then  
+        	 REPLY=+
+        	 vol
+        	 exit 0
 	  	fi
+	    if [[ ${1,,} == dec_vol ]]; then  
+        	 REPLY=-
+        	 vol
+        	 exit 0
+	  	fi
+	  	
+	    if [[ ${1,,} == add_favorite ]]; then  
+ 			tmp=$(</tmp/music_thingy.info) ### Repeat delete cmds so no duplicate entries 
+			foo=$(<$favs)
+			echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
+			fav=$(</tmp/music_thingy.info)
+			echo $fav >> $favs
+			if [[ ${OS_NAME,,} == haiku && $show_alerts == 1 ]]; then
+			 alert "
+${fav//\\n */}
 
+Added to favorites."
+			fi
+            exit 0
+	  	fi	  	
+	  	
 	 	if [[ ${1,,} == del_favorite ]]; then  
-  		 	 xcleanup_thingy
-       		 echo $BASHPID > /tmp/music_thingy.pid
-        	 REPLY=d
-       		 nu="0-$((${#playlist[*]}-1))"
-			 shuffle="$(shuf -i $nu -n 1)"
-			 pl="${playlist[$shuffle]}"
-			 tr=(${pl//\\n/\/ })
-		     tr=${tr[0]}
-             mapfile playlist <<< $tr  	
+			tmp=$(</tmp/music_thingy.info)
+			foo=$(<$favs)
+			echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
+			if [[ ${OS_NAME,,} == haiku ]]; then
+			if  [[ ! -s $ConfigDir/favorites && $show_alerts == 1  ]];then
+			 alert "
+Playlist is empty."	
+			 exit 0		
+			fi
+			fav=$(</tmp/music_thingy.info)
+				if [[ ${OS_NAME,,} == haiku && $show_alerts == 1 ]]; then
+			 alert "
+${fav//\\n */}
+
+Deleted from favorites."
+				fi
+			fi	
+            exit 0
 		fi
         
         if [[ ${1,,} == shuffle ]]; then    
-        xcleanup_thingy
-        echo $BASHPID > /tmp/music_thingy.pid
-        REPLY=s
-        nu="0-$((${#playlist[*]}-1))"
-		shuffle="$(shuf -i $nu -n 1)"
-		pl="${playlist[$shuffle]}"
-		tr=(${pl//\\n/\/ })
-		tr=${tr[0]}
-        mapfile playlist <<< $tr     
+       	   xcleanup_thingy
+     	   echo $BASHPID > /tmp/music_thingy.pid
+     	   REPLY=s  
         fi       
         
         if [[ ${1,,} == quit ]]; then        
-        xcleanup_thingy
-	exit 0
+        	xcleanup_thingy
+			exit 0
         fi   
 
 
 fi
 	
 startplaying(){
+
 header(){
 	echo -e " * $(</tmp/music_thingy.info) \n   * Total Playlists ${#playlist[*]}\\n   * $(vol)\\n"
 }
@@ -202,15 +236,9 @@ footer(){
 }
 if [[ $REPLY == a ]];then
     if [[ -s $favs ]];then ## make sure favorits is not empty
-	mapfile playlist < $favs
-	nu="0-$((${#playlist[*]}-1))"
-	shuffle="$(shuf -i $nu -n 1)"
-	pl="${playlist[$shuffle]}"
-	tr=(${pl//\\n/\/ })
-	tr=${tr[0]}
-	tmp=$(</tmp/music_thingy.info) ### Repeat the delete cmds so no duplicate entries 
-	foo=$(<$favs)
-	echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
+		tmp=$(</tmp/music_thingy.info) ### Repeat the delete cmds so no duplicate entries 
+		foo=$(<$favs)
+		echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
 	fi				
 	fav=$(</tmp/music_thingy.info)
 	echo $fav >> $favs	
@@ -223,16 +251,12 @@ if [[ $REPLY == l ]];then
 	return
 fi
 if [[ $REPLY == d ]];then
-	mapfile playlist < $favs
-	nu="0-$((${#playlist[*]}-1))"
-	shuffle="$(shuf -i $nu -n 1)"
-	pl="${playlist[$shuffle]}"
-	tr=(${pl//\\n/\/ })
-	tr=${tr[0]}
 	tmp=$(</tmp/music_thingy.info)
 	foo=$(<$favs)
 	echo "${foo//"$tmp"}" | sed '/^$/d' > $favs				
 fi
+
+
 if [[ ${REPLY} == h ]];then
 	echo -e "${BLUE}  ${RED}<Help>\\n"				
 	echo -e "${BLUE} * ${RED} [a]  Add to favorites"
@@ -319,17 +343,6 @@ startplaying
 
 while true
 	do
-		if [[ ${OS_NAME,,} == haiku ]]; then
-	   		     [[ ! -d ${HOME}/config/settings/music_thingy ]] && mkdir ${HOME}/config/settings/music_thingy
-				 [[ ! -e ${HOME}/config/settings/music_thingy/favorites ]] && touch ${HOME}/config/settings/music_thingy/favorites
-				 favs="${HOME}/config/settings/music_thingy/favorites"
-				 
-
-       elif [[ ${OS_NAME,,} == linux ]]; then
-	   		 [[ ! -d ${HOME}/.config/music_thingy ]] && mkdir ${HOME}/.config/music_thingy
-				 [[ ! -e ${HOME}/.config/music_thingy/favorites ]] && touch ${HOME}/.config/music_thingy/favorites
-				 favs="${HOME}/.config/music_thingy/favorites"
-       fi
 		 player="mpv"		 
 		 BLUE="$(tput setaf 12)"    
 		 RED="$(tput setaf 9)"
