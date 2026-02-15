@@ -4,4 +4,7 @@
 - Uses mpv as the backend.
 
 ###
-![Screenshot](https://github.com/ablyssx74/haiku_music_thingy/blob/main/screenshot.png)
+[Screenshot](https://github.com/ablyssx74/music_thingy/blob/main/screenshot.png) 
+
+###
+Create [shortcuts](https://github.com/ablyssx74/music_thingy/blob/main/screenshot.png) that will play and accept commands in the background.
