@@ -7,4 +7,4 @@
 [Screenshot](https://github.com/ablyssx74/music_thingy/blob/main/screenshot.png) 
 
 ###
-Create [shortcuts](https://github.com/ablyssx74/music_thingy/blob/main/screenshot.png) that will play and accept commands in the background.
+Create [shortcuts](https://github.com/ablyssx74/music_thingy/blob/main/screenshot1.png) that will play and accept commands in the background.
