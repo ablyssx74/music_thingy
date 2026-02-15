@@ -1,5 +1,6 @@
 # music_thingy
-- A shell script to randomly stream [Somafm](https://somafm.com/) online music from Terminal. 
+- A shell script to randomly stream [Somafm](https://somafm.com/) online music from a terminal or remote backend.
+- Can add custom URLS to playlist
 - Add, del fovarite streams, control master volume.
 - Uses mpv as the backend.
 
