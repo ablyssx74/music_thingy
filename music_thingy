@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # 
-# Copy or link to /boot/home/config/non-packaged/bin
-# To Run Open Terminal and type `music_thingy`
+# Copy or link to prefered /bin directory
+# To Run open a terminal and type `music_thingy` or use keyboard shortcuts to pass argument 
+# Examples "music_thingy https://ice2.somafm.com/secretagent-128-mp3" "music_thingy quit"  "/music_thingy shuffle"  "music_thingy favorites"
+
 
 
 set -f
