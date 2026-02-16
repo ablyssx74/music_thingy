@@ -246,7 +246,7 @@ while [[ $var -le $v ]]
 
 		#echo $var:${x[$var]}
 		if [[ $REPLY == $var ]];then
-		echo -e "   ${RED}<Config>\\n"
+		echo -e "  ${RED}<Config>\\n"
 
 		a=""$var:${x[$var]}""
 		name=""${x[$var]}""
@@ -292,7 +292,7 @@ while [[ $var -le $v ]]
 								echo -e ""	 - Updated: ${x3[$i]}""
 							((i++))
 						done
-						echo -e "\\n      ${RED}\\n   </Config>\\n${BLUE}"
+						echo -e "\\n      ${RED}\\n  </Config>\\n${BLUE}"
 			return
 		fi
 
