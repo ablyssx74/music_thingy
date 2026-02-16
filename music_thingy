@@ -134,7 +134,7 @@ if [[ ${OS_NAME,,} == haiku ]]; then
 				 
 elif [[ ${OS_NAME,,} == linux ]]; then
 	 [[ ! -e $ConfigDir/playlist ]] && echo -n "${playlist[*]}" > $ConfigDir/playlist
-	 playlist="$ConfigDir/playlist"			 
+	  playlist="$(< $ConfigDir/playlist)"
 fi				 
 
 mapfile playlist <<< $playlist
