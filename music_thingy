@@ -367,8 +367,9 @@ if [[ ${REPLY} == c ]];then
 			echo -e ""   ${RED}  Press:${BLUE} $i${RED} to change status of ${BLUE}${x[$i]}${RED} ""
 			if [[ ${x[$i]} = show_alerts* ]];then
 			   echo ""
-			   	echo -e "   ${BLUE} * ${RED}Info: Show alerts shows a popup screen when adding/deleting favorites."
-			   	echo -e "   ${BLUE} * ${RED}Currently only shows popup when a shortcut key passes the argument, e.g. music_thingy add_favorite"
+			   echo -e "   ${BLUE} Info"
+			   echo -e "   ${BLUE} * ${RED}Show alerts shows a popup screen when adding/deleting favorites."
+			   echo -e "   ${BLUE} * ${RED}Currently only shows popup when a shortcut key passes the argument, e.g. music_thingy add_favorite"
 			   echo -e "   ${BLUE} * ${RED}Requires notify-send on linux."
 			fi
 			((i++))
