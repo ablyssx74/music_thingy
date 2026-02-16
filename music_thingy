@@ -246,7 +246,7 @@ while [[ $var -le $v ]]
 
 		#echo $var:${x[$var]}
 		if [[ $REPLY == $var ]];then
-		echo -e "  ${RED}<Config>\\n"
+		echo -e "  ${RED}<Config>\\n\\n"
 
 		a=""$var:${x[$var]}""
 		name=""${x[$var]}""
@@ -289,7 +289,7 @@ while [[ $var -le $v ]]
 							ii=$((${#x3[*]} - 1))
 							while [[ $i -le $ii ]]
 								do
-								echo -e ""	 - Updated: ${x3[$i]}""
+								echo -e ""        ${BLUE}     * ${RED}Updated: ${BLUE}${x3[$i]}${RED}""
 							((i++))
 						done
 						echo -e "\\n      ${RED}\\n  </Config>\\n${BLUE}"
@@ -364,12 +364,12 @@ if [[ ${REPLY} == c ]];then
 	    ii=$((${#x[*]} - 1))
 		while [[ $i -le $ii ]]
 		 do
-			echo -e ""   ${RED}  Press:$i to change status of ${x[$i]}""
+			echo -e ""   ${RED}  Press:${BLUE} $i${RED} to change status of ${BLUE}${x[$i]}${RED} ""
 			if [[ ${x[$i]} = show_alerts* ]];then
 			   echo ""
-			   echo "   - Info: Show alerts shows a popup screen when adding/deleting favorites."
-			   echo "   - Currently only shows popup when a shortcut key passes the argument, e.g. music_thingy add_favorite"
-			   echo "   - Requires notify-send on linux."
+			   	echo -e "   ${BLUE} * ${RED}Info: Show alerts shows a popup screen when adding/deleting favorites."
+			   	echo -e "   ${BLUE} * ${RED}Currently only shows popup when a shortcut key passes the argument, e.g. music_thingy add_favorite"
+			   echo -e "   ${BLUE} * ${RED}Requires notify-send on linux."
 			fi
 			((i++))
 		done
