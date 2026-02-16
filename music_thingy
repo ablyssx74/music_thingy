@@ -33,7 +33,7 @@ OS_NAME=$(uname -s)
 
        fi
 
-export $(< $config)
+source $config
 
 xcleanup_thingy(){ 
 echo
