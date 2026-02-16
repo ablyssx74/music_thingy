@@ -37,7 +37,6 @@ source $config
 
 xcleanup_thingy(){ 
 echo
-#[[ -e /tmp/bash_music_thingy.pid ]] && kill -1 $(</tmp/bash_music_thingy.pid) && rm /tmp/bash_music_thingy.pid
 [[ -e /tmp/music_thingy.pid ]] && kill -1 $(</tmp/music_thingy.pid) && rm /tmp/music_thingy.pid
 
 }
@@ -233,10 +232,80 @@ Deleted from favorites."
 
 
 fi
-	
+configs=($(<$ConfigDir/config))
+
 startplaying(){
 
 header(){
+mapfile x <$ConfigDir/config
+var=0
+v=$((${#x[*]} - 1))
+
+while [[ $var -le $v ]]
+	do
+
+		#echo $var:${x[$var]}
+		if [[ $REPLY == $var ]];then
+		echo -e "${RED}<Config Current Settings>"
+
+		a=""$var:${x[$var]}""
+		name=""${x[$var]}""
+		c="${#name}"
+		((c--)) && ((c--))
+		value=${name[*]:$c}
+		(( 0 == value )) && cv=1
+		(( 1 == value )) && cv=0
+		n1=${name%??}$value
+		n2=${name%??}$cv
+
+
+	    #echo Saving\ $n1\to $n2
+	    i=0
+	    ii=$((${#x[*]} - 1))
+		while [[ $i -le $ii ]]
+		 do
+			echo ""Press:$i to change status of ${x[$i]}""
+			((i++))
+		done
+	    #s=${x[*]}
+	    #echo -e ${s// /\\n} | sed "s/^/Press $i/"
+		#echo ${#x[*]}
+
+	    		mapfile x2 <$ConfigDir/config
+			var2=0
+			v2=$((${#x2[*]} - 1))
+				while [[ $var2 -le $v2 ]]
+					do
+						try=${x2[$var2]}
+						arr+=(${try/$n1/$n2})
+
+						((var2++))
+					done
+
+					try2=""${arr[*]}""
+					echo -e ${try2// /\\n} > $ConfigDir/config
+					source $config
+					echo ""
+					echo "<Config New Settings>"
+					mapfile x3 <$ConfigDir/config
+						    i=0
+							ii=$((${#x3[*]} - 1))
+							while [[ $i -le $ii ]]
+								do
+								echo ""Updated status:${x3[$i]}""
+							((i++))
+						done
+					echo -e "\\n${BLUE}"
+
+		fi
+
+		((var++))
+
+
+done
+return
+
+
 	echo -e " * $(</tmp/music_thingy.info) \n   * Total Playlists ${#playlist[*]}\\n   * $(vol)\\n"
 }
 xfooter(){
@@ -277,6 +346,7 @@ if [[ ${REPLY} == h ]];then
 	echo -e "${BLUE}  ${RED}<Help>\\n"				
 	echo -e "${BLUE} * ${RED} [a]  Add to favorites"
 	echo -e "${BLUE} * ${RED} [d]  Delete from favorites"	
+	echo -e "${BLUE} * ${RED} [c]  Config Manager"
 	echo -e "${BLUE} * ${RED} [f]  Shuffle favorites"
 	echo -e "${BLUE} * ${RED} [l]  List favorites"
 	echo -e "${BLUE} * ${RED} [s]  Shuffle all"
@@ -290,7 +360,26 @@ if [[ ${REPLY} == h ]];then
 	footer
  return					
 fi
+if [[ ${REPLY} == c ]];then
+	echo -e "${BLUE}  ${RED}<Config>\\n"
+	mapfile x <$ConfigDir/config
+		i=0
+	    ii=$((${#x[*]} - 1))
+		while [[ $i -le $ii ]]
+		 do
+			echo ""Press:$i to change status of ${x[$i]}""
+			if [[ ${x[$i]} = show_alerts* ]];then
+			   echo "Info: Show alerts shows a popup screen when adding/deleting favorites."
+			   echo "Currently only shows popup when a shortcut key passes the argument, e.g. music_thingy add_favorite"
+			   echo "Requires notify-send on linux."
+			fi
+			((i++))
+		done
+	echo -e "${BLUE}  ${RED}\\n  </Config>\\n${BLUE}"
 
+	footer
+ return
+fi
 
 if [[ $REPLY == f ]];then	
 		 if [[ -s $favs ]];then 
@@ -301,7 +390,7 @@ if [[ $REPLY == f ]];then
 		tr=(${pl//\\n/\/ })
 		tr=${tr[0]}
 		xcleanup_thingy
-        (echo $BASHPID > /tmp/music_thingy.pid; $player ${tr})&> /dev/null &   
+        (echo $BASHPID > /tmp/music_thingy.pid; $player ${tr})&> /dev/null &
         #(echo $BASHPID > /tmp/music_thingy.pid; exec -a MuSiC-ThInGy- curl -L  ${tr} -o /tmp/music_thingy.pipe & exec -a MuSiC-ThInGy- $player /tmp/music_thingy.pipe)&> /dev/null &
        
         url="${pl//,/\\n *}"
@@ -319,7 +408,7 @@ if [[ $REPLY == s || ! $REPLY ]];then
 		tr=(${pl//#/\/ })
 		tr=${tr[0]}
         xcleanup_thingy
-       (echo $BASHPID > /tmp/music_thingy.pid; $player ${tr})&> /dev/null &        
+       (echo $BASHPID > /tmp/music_thingy.pid; $player ${tr})&> /dev/null &
 
        #(echo $BASHPID > /tmp/music_thingy.pid; exec -a MuSiC-ThInGy- curl -L  ${tr} -o /tmp/music_thingy.pipe & exec -a MuSiC-ThInGy- $player /tmp/music_thingy.pipe)&> /dev/null &        
         url="${pl//,/\\n *}"
