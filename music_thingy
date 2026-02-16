@@ -28,7 +28,7 @@ OS_NAME=$(uname -s)
 				 favs="$ConfigDir/favorites"
 				 config="$ConfigDir/config"
 				 if [[ ! -s $config ]];then
-				    echo -e "show__kde_alerts=0" > $config
+				    echo -e "show_alerts=1" > $config
 				 fi
 
        fi
@@ -180,6 +180,10 @@ ${fav//\\n */}
 
 Added to favorites."
 			fi
+		if [[ ${OS_NAME,,} == linux && $show_alerts == 1 ]]; then
+			 notify-send -a Music\ Thingy "${fav//\\n */}
+Added to favorites."
+		fi
             exit 0
 	  	fi	  	
 	  	
@@ -187,23 +191,35 @@ Added to favorites."
 			tmp=$(</tmp/music_thingy.info)
 			foo=$(<$favs)
 			echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
-			if [[ ${OS_NAME,,} == haiku ]]; then
-			if  [[ ! -s $ConfigDir/favorites && $show_alerts == 1  ]];then
+			if  [[ ! -s $ConfigDir/favorites && $show_alerts == 1 && ${OS_NAME,,} == haiku ]];then
 			 alert "
 Playlist is empty."	
 			 exit 0		
 			fi
 			fav=$(</tmp/music_thingy.info)
-				if [[ ${OS_NAME,,} == haiku && $show_alerts == 1 ]]; then
+			if [[ ${OS_NAME,,} == haiku && $show_alerts == 1 ]]; then
 			 alert "
 ${fav//\\n */}
 
 Deleted from favorites."
-				fi
-			fi	
+			exit 0
+			fi
+
+			if  [[ ! -s $ConfigDir/favorites && $show_alerts == 1 && ${OS_NAME,,} == linux ]];then
+			 notify-send -a Music\ Thingy "
+Playlist is empty."
+			 exit 0
+			fi
+			fav=$(</tmp/music_thingy.info)
+			if [[ ${OS_NAME,,} == linux && $show_alerts == 1 ]]; then
+			 notify-send -a Music\ Thingy "${fav//\\n */}
+Deleted from favorites."
+			exit 0
+			fi
+
             exit 0
 		fi
-        
+
         if [[ ${1,,} == shuffle ]]; then    
        	   xcleanup_thingy
      	   echo $BASHPID > /tmp/music_thingy.pid
