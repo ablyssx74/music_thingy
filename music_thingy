@@ -293,7 +293,7 @@ while [[ $var -le $v ]]
 							((i++))
 						done
 						echo -e "\\n      ${RED}\\n   </Config>\\n${BLUE}"
-
+			return
 		fi
 
 		((var++))
