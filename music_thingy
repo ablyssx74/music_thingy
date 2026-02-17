@@ -7,31 +7,41 @@
 
 
 set -f
+shopt -s nocasematch
 
 OS_NAME=$(uname -s)
-		if [[ ${OS_NAME,,} == haiku ]]; then
-				 ConfigDir=${HOME}/config/settings/music_thingy
-	   		     [[ ! -d $ConfigDir ]] && mkdir $ConfigDir
-				 [[ ! -e $ConfigDir/favorites ]] && touch $ConfigDir/favorites
-				 [[ ! -e $ConfigDir/config ]] && touch $ConfigDir/config
-				 favs="$ConfigDir/favorites"
-				 config="$ConfigDir/config"
-				 if [[ ! -s $config ]];then
-				    echo -e "show_alerts=0" > $config
-				 fi
+if [[ ${OS_NAME} == haiku ]]; then
+		 notify="notify"
+		 x=($(which ${notify%}))
+		 [[ -n ${x[0]} ]] && notify="notify --title MusicThingy "
+		 ConfigDir=${HOME}/config/settings/music_thingy
+	     [[ ! -d $ConfigDir ]] && mkdir $ConfigDir
+		 [[ ! -e $ConfigDir/favorites ]] && touch $ConfigDir/favorites
+		 [[ ! -e $ConfigDir/config ]] && touch $ConfigDir/config
+		 favs="$ConfigDir/favorites"
+		 config="$ConfigDir/config"
+		 if [[ ! -s $config ]];then
+			    echo -e "show_alerts=0" > $config
+			    echo -e "debug_disable_player=0" >> $config
+		 fi
+fi
 
-       elif [[ ${OS_NAME,,} == linux ]]; then
-       			 ConfigDir=${HOME}/.config/music_thingy
-	   		 	 [[ ! -d $ConfigDir ]] && mkdir $ConfigDir
-				 [[ ! -e $ConfigDir/favorites ]] && touch $ConfigDir/favorites
-				 [[ ! -e $ConfigDir/config ]] && touch $ConfigDir/config
-				 favs="$ConfigDir/favorites"
-				 config="$ConfigDir/config"
-				 if [[ ! -s $config ]];then
-				    echo -e "show_alerts=1" > $config
-				 fi
+if [[ ${OS_NAME} == linux ]]; then
+		 notify="notify-send"
+		 x=($(which ${notify%}))
+		 [[ -n ${x[0]} ]] && notify="notify-send -a MusicThingy"
+		 ConfigDir=${HOME}/.config/music_thingy
+	 	 [[ ! -d $ConfigDir ]] && mkdir $ConfigDir
+		 [[ ! -e $ConfigDir/favorites ]] && touch $ConfigDir/favorites
+		 [[ ! -e $ConfigDir/config ]] && touch $ConfigDir/config
+		 favs="$ConfigDir/favorites"
+		 config="$ConfigDir/config"
+		 if [[ ! -s $config ]];then
+			    echo -e "show_alerts=1" > $config
+			    echo -e "debug_disable_player=0" >> $config
+		 fi
 
-       fi
+fi
 
 source $config
 
@@ -54,14 +64,14 @@ echo
 #}
 
 vol() {
-	  if [[ ${OS_NAME,,} == haiku ]]; then
+	  if [[ ${OS_NAME} == haiku ]]; then
   		  [[ $REPLY == + ]] && setvolume -i > /dev/null
   		  [[ $REPLY == - ]] && setvolume -d > /dev/null 
   		  [[ $REPLY == m ]] && setvolume -m > /dev/null
   		  [[ $REPLY == u ]] && setvolume -u > /dev/null
   		  setvolume
 
-elif [[ ${OS_NAME,,} == linux ]]; then
+elif [[ ${OS_NAME} == linux ]]; then
 	for l in "$(amixer get Master)"
 		do
 			 l=${l// /_}  
@@ -127,11 +137,11 @@ https://ice4.somafm.com/reggae-128-mp3#The Trip - Progressive house / trance. Ti
 https://ice6.somafm.com/thistle-128-mp3#ThistleRadio - Exploring music from Celtic roots and branches
 https://ice1.somafm.com/vaporwaves-128-mp3#Vaporwaves - All Vaporwave. All the time."
 
-if [[ ${OS_NAME,,} == haiku ]]; then
+if [[ ${OS_NAME} == haiku ]]; then
 	 [[ ! -e $ConfigDir/playlist ]] && echo -n "${playlist[*]}" > $ConfigDir/playlist
 	  playlist="$(< $ConfigDir/playlist)"
 				 
-elif [[ ${OS_NAME,,} == linux ]]; then
+elif [[ ${OS_NAME} == linux ]]; then
 	 [[ ! -e $ConfigDir/playlist ]] && echo -n "${playlist[*]}" > $ConfigDir/playlist
 	  playlist="$(< $ConfigDir/playlist)"
 fi				 
@@ -161,6 +171,7 @@ if [[ $1 ]];then
         	 vol
         	 exit 0
 	  	fi
+	  	
 	    if [[ ${1,,} == dec_vol ]]; then  
         	 REPLY=-
         	 vol
@@ -173,70 +184,58 @@ if [[ $1 ]];then
 			echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
 			fav=$(</tmp/music_thingy.info)
 			echo $fav >> $favs
-			if [[ ${OS_NAME,,} == haiku && $show_alerts == 1 ]]; then
-			 /bin/notify --title Music\ Thingy  "
-${fav//\\n */}
+			if [[ $show_alerts == 1 ]]; then
+			 $notify "${fav//\\n */}
 
-Added to favorites."
+
+Added to favorites." 
 			fi
-		if [[ ${OS_NAME,,} == linux && $show_alerts == 1 ]]; then
-			 notify-send -a Music\ Thingy "${fav//\\n */}
-Added to favorites."
-		fi
-            exit 0
-	  	fi	  	
+
+   		 exit 0
+		fi	  	
 	  	
 	 	if [[ ${1,,} == del_favorite ]]; then  
 			tmp=$(</tmp/music_thingy.info)
 			foo=$(<$favs)
 			echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
-			if  [[ ! -s $ConfigDir/favorites && $show_alerts == 1 && ${OS_NAME,,} == haiku ]];then
-			 /bin/notify  --title Music\ Thingy  "
+			if  [[ ! -s $ConfigDir/favorites && $show_alerts == 1 ]];then
+			 $notify "
+			 
 Playlist is empty."	
 			 exit 0		
 			fi
 			fav=$(</tmp/music_thingy.info)
-			if [[ ${OS_NAME,,} == haiku && $show_alerts == 1 ]]; then
-			 /bin/notify  --title Music\ Thingy "
-${fav//\\n */}
+			
+			if [[ $show_alerts == 1 ]]; then
+			 $notify "${fav//\\n */}
+
 
 Deleted from favorites."
 			exit 0
 			fi
 
-			if  [[ ! -s $ConfigDir/favorites && $show_alerts == 1 && ${OS_NAME,,} == linux ]];then
-			 notify-send -a Music\ Thingy "
-Playlist is empty."
-			 exit 0
-			fi
 			fav=$(</tmp/music_thingy.info)
-			if [[ ${OS_NAME,,} == linux && $show_alerts == 1 ]]; then
-			 notify-send -a Music\ Thingy "${fav//\\n */}
-Deleted from favorites."
-			exit 0
-			fi
 
-            exit 0
+         exit 0
 		fi
 
-        if [[ ${1,,} == shuffle ]]; then    
+	if [[ ${1,,} == shuffle ]]; then    
        	   xcleanup_thingy
      	   echo $BASHPID > /tmp/music_thingy.pid
      	   REPLY=s  
-        fi       
+	fi       
         
-        if [[ ${1,,} == quit ]]; then        
+	if [[ ${1,,} == quit ]]; then        
         	xcleanup_thingy
 			exit 0
-        fi   
-
-
+	fi  
 fi
+
 configs=($(<$ConfigDir/config))
 
 startplaying(){
 
-header(){
+main(){
 mapfile x <$ConfigDir/config
 var=0
 v=$((${#x[*]} - 1))
@@ -364,13 +363,12 @@ if [[ ${REPLY} == c ]];then
 	    ii=$((${#x[*]} - 1))
 		while [[ $i -le $ii ]]
 		 do
-			echo -e ""   ${RED}  Press:${BLUE} $i${RED} to change status of ${BLUE}${x[$i]}${RED} ""
+			echo -e ""\\n   ${RED}  Press:${BLUE} $i${RED} to change status of ${BLUE}${x[$i]}${RED} ""
 			if [[ ${x[$i]} = show_alerts* ]];then
-			   echo ""
+			  
 			   echo -e "   ${BLUE} Info"
-			   echo -e "   ${BLUE} * ${RED}Show alerts shows a popup screen when adding/deleting favorites."
-			   echo -e "   ${BLUE} * ${RED}Currently only shows popup when a shortcut key passes the argument, e.g. music_thingy add_favorite"
-			   echo -e "   ${BLUE} * ${RED}Requires notify-send on linux."
+			   echo -e "   ${BLUE} * ${RED}Shows a notification when adding/deleting favorites."
+			   echo -e "   ${BLUE} * ${RED}Currently only shows notification when a shortcut key passes the argument, e.g. music_thingy add_favorite"
 			fi
 			((i++))
 		done
@@ -389,8 +387,12 @@ if [[ $REPLY == f ]];then
 		tr=(${pl//\\n/\/ })
 		tr=${tr[0]}
 		xcleanup_thingy
-        (echo $BASHPID > /tmp/music_thingy.pid; $player ${tr})&> /dev/null &
-        #(echo $BASHPID > /tmp/music_thingy.pid; exec -a MuSiC-ThInGy- curl -L  ${tr} -o /tmp/music_thingy.pipe & exec -a MuSiC-ThInGy- $player /tmp/music_thingy.pipe)&> /dev/null &
+       (echo $BASHPID > /tmp/music_thingy.pid
+       source $config
+       [[ $debug_disable_player == 1 ]] && return 0
+       $player ${tr})&> /dev/null &
+       
+       #(echo $BASHPID > /tmp/music_thingy.pid; exec -a MuSiC-ThInGy- curl -L  ${tr} -o /tmp/music_thingy.pipe & exec -a MuSiC-ThInGy- $player /tmp/music_thingy.pipe)&> /dev/null &
        
         url="${pl//,/\\n *}"
 		url="${url//\ -\ /\\n * }"
@@ -406,9 +408,13 @@ if [[ $REPLY == s || ! $REPLY ]];then
 		pl="${playlist[$shuffle]}"
 		tr=(${pl//#/\/ })
 		tr=${tr[0]}
-        xcleanup_thingy
-       (echo $BASHPID > /tmp/music_thingy.pid; $player ${tr})&> /dev/null &
+        xcleanup_thingy	
 
+       (echo $BASHPID > /tmp/music_thingy.pid
+       source $config
+       [[ $debug_disable_player == 1 ]] && return 0
+       $player ${tr})&> /dev/null &
+	
        #(echo $BASHPID > /tmp/music_thingy.pid; exec -a MuSiC-ThInGy- curl -L  ${tr} -o /tmp/music_thingy.pipe & exec -a MuSiC-ThInGy- $player /tmp/music_thingy.pipe)&> /dev/null &        
         url="${pl//,/\\n *}"
 	url="${url//\ -\ /\\n * }"
@@ -417,11 +423,11 @@ if [[ $REPLY == s || ! $REPLY ]];then
 	echo ${url[*]} > /tmp/music_thingy.info	
 fi
 
-header
-footer
+main "$@"
+footer "$@"
 }
 
-header() {
+main() {
 tput -S <<!
 clear
 cup 10 
@@ -435,11 +441,9 @@ tput rmso
 
 
 #[[ ! -p /tmp/music_thingy.pipe ]] && mkfifo /tmp/music_thingy.pipe
-
-
 #[[ -e /tmp/music_thingy.pid ]] && rm /tmp/music_thingy.pid && kill -1 $$
 
-startplaying	
+startplaying "$@"	
 
 
 
@@ -456,10 +460,10 @@ while true
 		 BLACK="$(tput setaf 234)" 
 		 REPLY=${REPLY,,}		 		 
 		 pids="$(ps | grep music_thing)"	 
-		 x=($(${player%} --version))
-		if [[ ${OS_NAME,,} == haiku ]]; then
+		 x=($(which ${player%}))
+		if [[ ${OS_NAME} == haiku ]]; then
 				 [[ -z ${x[0]} ]] && echo -e "\\n${ORANGE}${player}${RED} not installed. ${BLUE}Please install it with pkgman install mpv. :-)\\n" && break
-        elif [[ ${OS_NAME,,} == linux ]]; then
+        elif [[ ${OS_NAME} == linux ]]; then
 				 [[ -z ${x[0]} ]] && echo -e "\\n${ORANGE}${player}${RED} not installed. ${BLUE}Please install it with your OS package manager.  :-)\\n" && break
 		fi
 		 if [[ ${REPLY} == q ]];then
@@ -467,7 +471,7 @@ while true
 		 	 xcleanup_thingy
 		      break		 
 		  else
-		  	read -s -r -p "$(header)" -n 1	
+		  	read -s -r -p "$(main "$@")" -n 1	
 		  	
 		 fi	 
 	done
