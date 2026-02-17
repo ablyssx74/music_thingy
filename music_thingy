@@ -174,7 +174,7 @@ if [[ $1 ]];then
 			fav=$(</tmp/music_thingy.info)
 			echo $fav >> $favs
 			if [[ ${OS_NAME,,} == haiku && $show_alerts == 1 ]]; then
-			 alert "
+			 /bin/notify --title Music\ Thingy  "
 ${fav//\\n */}
 
 Added to favorites."
@@ -191,13 +191,13 @@ Added to favorites."
 			foo=$(<$favs)
 			echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
 			if  [[ ! -s $ConfigDir/favorites && $show_alerts == 1 && ${OS_NAME,,} == haiku ]];then
-			 alert "
+			 /bin/notify  --title Music\ Thingy  "
 Playlist is empty."	
 			 exit 0		
 			fi
 			fav=$(</tmp/music_thingy.info)
 			if [[ ${OS_NAME,,} == haiku && $show_alerts == 1 ]]; then
-			 alert "
+			 /bin/notify  --title Music\ Thingy "
 ${fav//\\n */}
 
 Deleted from favorites."
