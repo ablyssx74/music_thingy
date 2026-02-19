@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# 
+#
 # Copy or link to prefered /bin directory
-# To Run open a terminal and type `music_thingy` or use keyboard shortcuts to pass argument 
+# To Run open a terminal and type `music_thingy` or use keyboard shortcuts to pass argument
 # Examples "music_thingy https://ice2.somafm.com/secretagent-128-mp3" "music_thingy quit"  "/music_thingy shuffle"  "music_thingy favorites"
 
 
@@ -45,19 +45,27 @@ fi
 
 source $config
 
+if [[ ! $show_alerts ]];then
+	echo -e "show_alerts=0" > $config
+fi
+
+if [[ ! $debug_disable_player ]];then
+    echo -e "debug_disable_player=0" >> $config
+fi
+
 cleanup_thingy(){
-mapfile pids <<< $pids	
+mapfile pids <<< $pids
 	if [[ ${#pids[*]} -gt 1 ]];then
 		pid0="${pids[0]}"
 		pid0=(${pid0})
-		kill -1 "${pid0[1]}"		
+		kill -1 "${pid0[1]}"
 		pid1="${pids[1]}"
 		pid1=(${pid1})
-		kill -1 "${pid1[1]}" 		
+		kill -1 "${pid1[1]}"
        fi
 }
 
-xcleanup_thingy(){ 
+xcleanup_thingy(){
 echo
 #exec 3>&-
 #cleanup_thingy
@@ -73,7 +81,7 @@ echo
 vol() {
 	  if [[ ${OS_NAME} == haiku ]]; then
   		  [[ $REPLY == + ]] && setvolume -i > /dev/null
-  		  [[ $REPLY == - ]] && setvolume -d > /dev/null 
+  		  [[ $REPLY == - ]] && setvolume -d > /dev/null
   		  [[ $REPLY == m ]] && setvolume -m > /dev/null
   		  [[ $REPLY == u ]] && setvolume -u > /dev/null
   		  setvolume
@@ -81,29 +89,29 @@ vol() {
 elif [[ ${OS_NAME} == linux ]]; then
 	for l in "$(amixer get Master)"
 		do
-			 l=${l// /_}  
+			 l=${l// /_}
  	         l=${l/_[/ }
  		 	l=${l/]_/ }
   		 	l=($l)
   		 	s="${l[5]}"
-  
-  		 		#Fix for raspberry pi *** maybe outdated 
- 		 		[[ ${#s} -gt 3 ]] && s="${l[6]}"  
+
+  		 		#Fix for raspberry pi *** maybe outdated
+ 		 		[[ ${#s} -gt 3 ]] && s="${l[6]}"
 
   		  soundlevel=${s//%/}
-  		  inc_sound=$(($soundlevel + 5))
-  		  dec_sound=$(($soundlevel - 5))
+  		  inc_sound=$(($soundlevel + 1))
+  		  dec_sound=$(($soundlevel - 1))
 
-  		  [[ $REPLY == + ]] && amixer -q set Master $(($soundlevel + 5))% && s=$(($soundlevel + 5))%
-  		  [[ $REPLY == - ]] && amixer -q set Master $(($soundlevel - 5))% && s=$(($soundlevel - 5))%  
+  		  [[ $REPLY == + ]] && amixer -q set Master $(($soundlevel + 1))% && s=$(($soundlevel + 1))%
+  		  [[ $REPLY == - ]] && amixer -q set Master $(($soundlevel - 1))% && s=$(($soundlevel - 1))%
   		  [[ $REPLY == m ]] && amixer -q set Master mute && s=Muted
-  		  [[ $REPLY == u ]] && amixer -q set Master unmute 
-  		  echo "${s}"  			
+  		  [[ $REPLY == u ]] && amixer -q set Master unmute
+  		  echo "Vol: ${s}"
 	done
 fi
-} 
+}
 
-## Default playlist.  
+## Default playlist.
 ## Playlist is saved in $config directory and music_thingy must be restarted to read modified playlist.
 
 playlist="https://ice1.somafm.com/7soul-128-mp3#Seven Inch Soul - Vintage soul tracks from the original 45 RPM vinyl.
@@ -147,46 +155,46 @@ https://ice1.somafm.com/vaporwaves-128-mp3#Vaporwaves - All Vaporwave. All the t
 if [[ ${OS_NAME} == haiku ]]; then
 	 [[ ! -e $ConfigDir/playlist ]] && echo -n "${playlist[*]}" > $ConfigDir/playlist
 	  playlist="$(< $ConfigDir/playlist)"
-				 
+
 elif [[ ${OS_NAME} == linux ]]; then
 	 [[ ! -e $ConfigDir/playlist ]] && echo -n "${playlist[*]}" > $ConfigDir/playlist
 	  playlist="$(< $ConfigDir/playlist)"
-fi				 
+fi
 
 mapfile playlist <<< $playlist
-	
-# Added option to pass argument given to command line. 
+
+# Added option to pass argument given to command line.
 # Arguments accepted are quit, shuffle, favorites, or custom stream URL
 # Works good for things like KDE-connect and keyboard shortcuts to play music_thingy in the backend.
 # Examples "music_thingy https://ice2.somafm.com/secretagent-128-mp3" "music_thingy quit"  "music_thingy shuffle"  "music_thingy favorites"
 if [[ $1 ]];then
-        if [[ ${1,,} != quit && ${1,,} != shuffle && ${1,,} != favorites && ${1,,} != del_favorite  && ${1,,} != add_favorite && ${1,,} != inc_vol && ${1,,} != dec_vol ]];then         
+        if [[ ${1} != quit && ${1} != shuffle && ${1} != favorites && ${1} != del_favorite  && ${1} != add_favorite && ${1} != inc_vol && ${1} != dec_vol ]];then
         xcleanup_thingy
-        echo $BASHPID > /tmp/music_thingy.pid 
-        playlist="$1" 
-        mapfile playlist <<< $playlist 
+        echo $BASHPID > /tmp/music_thingy.pid
+        playlist="$1"
+        mapfile playlist <<< $playlist
         fi
-        
-        if [[ ${1,,} == favorites ]]; then         
-     	   xcleanup_thingy 
+
+        if [[ ${1} == favorites ]]; then
+     	   xcleanup_thingy
      	   echo $BASHPID > /tmp/music_thingy.pid
      	   REPLY=f
-        fi 
+        fi
 
-	    if [[ ${1,,} == inc_vol ]]; then  
+	    if [[ ${1} == inc_vol ]]; then
         	 REPLY=+
         	 vol
         	 exit 0
 	  	fi
-	  	
-	    if [[ ${1,,} == dec_vol ]]; then  
+
+	    if [[ ${1} == dec_vol ]]; then
         	 REPLY=-
         	 vol
         	 exit 0
 	  	fi
-	  	
-	    if [[ ${1,,} == add_favorite ]]; then  
- 			tmp=$(</tmp/music_thingy.info) ### Repeat delete cmds so no duplicate entries 
+
+	    if [[ ${1} == add_favorite ]]; then
+ 			tmp=$(</tmp/music_thingy.info) ### Repeat delete cmds so no duplicate entries
 			foo=$(<$favs)
 			echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
 			fav=$(</tmp/music_thingy.info)
@@ -195,24 +203,24 @@ if [[ $1 ]];then
 			 $notify "${fav//\\n */}
 
 
-Added to favorites." 
+Added to favorites."
 			fi
 
    		 exit 0
-		fi	  	
-	  	
-	 	if [[ ${1,,} == del_favorite ]]; then  
+		fi
+
+	 	if [[ ${1} == del_favorite ]]; then
 			tmp=$(</tmp/music_thingy.info)
 			foo=$(<$favs)
 			echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
 			if  [[ ! -s $ConfigDir/favorites && $show_alerts == 1 ]];then
 			 $notify "
-			 
-Playlist is empty."	
-			 exit 0		
+
+Playlist is empty."
+			 exit 0
 			fi
 			fav=$(</tmp/music_thingy.info)
-			
+
 			if [[ $show_alerts == 1 ]]; then
 			 $notify "${fav//\\n */}
 
@@ -226,19 +234,19 @@ Deleted from favorites."
          exit 0
 		fi
 
-	if [[ ${1,,} == shuffle ]]; then    
+	if [[ ${1} == shuffle ]]; then
        	   xcleanup_thingy
      	   echo $BASHPID > /tmp/music_thingy.pid
-     	   REPLY=s  
-	fi       
-        
-	if [[ ${1,,} == quit ]]; then        
+     	   REPLY=s
+	fi
+
+	if [[ ${1} == quit ]]; then
         	xcleanup_thingy
 			exit 0
-	fi  
+	fi
 fi
 
-configs=($(<$ConfigDir/config))
+#configs=($(<$ConfigDir/config))
 
 startplaying(){
 
@@ -252,7 +260,7 @@ while [[ $var -le $v ]]
 
 		#echo $var:${x[$var]}
 		if [[ $REPLY == $var ]];then
-		echo -e "  ${RED}<Config>\\n\\n"
+		echo -e "  ${RED}<Config>\\n\\n ${BLUE} * Press 0..9${RED}"
 
 		a=""$var:${x[$var]}""
 		name=""${x[$var]}""
@@ -298,8 +306,9 @@ while [[ $var -le $v ]]
 								echo -e ""        ${BLUE}     * ${RED}Updated: ${BLUE}${x3[$i]}${RED}""
 							((i++))
 						done
+
 						echo -e "\\n      ${RED}\\n  </Config>\\n${BLUE}"
-			return
+			exit 0
 		fi
 
 		((var++))
@@ -325,13 +334,13 @@ footer(){
 }
 if [[ $REPLY == a ]];then
     if [[ -s $favs ]];then ## make sure favorits is not empty
-		tmp=$(</tmp/music_thingy.info) ### Repeat the delete cmds so no duplicate entries 
+		tmp=$(</tmp/music_thingy.info) ### Repeat the delete cmds so no duplicate entries
 		foo=$(<$favs)
 		echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
-	fi				
+	fi
 	fav=$(</tmp/music_thingy.info)
-	echo $fav >> $favs	
-		
+	echo $fav >> $favs
+
 fi
 if [[ $REPLY == l ]];then
 	echo -e "${BLUE}  ${RED}<Favorites>\\n${BLUE}\\n$(<$favs)"
@@ -342,14 +351,14 @@ fi
 if [[ $REPLY == d ]];then
 	tmp=$(</tmp/music_thingy.info)
 	foo=$(<$favs)
-	echo "${foo//"$tmp"}" | sed '/^$/d' > $favs				
+	echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
 fi
 
 
 if [[ ${REPLY} == h ]];then
-	echo -e "${BLUE}  ${RED}<Help>\\n"				
+	echo -e "${BLUE}  ${RED}<Help>\\n"
 	echo -e "${BLUE} * ${RED} [a]  Add to favorites"
-	echo -e "${BLUE} * ${RED} [d]  Delete from favorites"	
+	echo -e "${BLUE} * ${RED} [d]  Delete from favorites"
 	echo -e "${BLUE} * ${RED} [c]  Config Manager"
 	echo -e "${BLUE} * ${RED} [f]  Shuffle favorites"
 	echo -e "${BLUE} * ${RED} [l]  List favorites"
@@ -362,10 +371,10 @@ if [[ ${REPLY} == h ]];then
 	echo -e "${BLUE} * ${RED} [h]  Help menu"
 	echo -e "${BLUE}  ${RED}\\n  </Help>\\n${BLUE}"
 	footer
- return					
+ return
 fi
 if [[ ${REPLY} == c ]];then
-	echo -e "${BLUE}  ${RED}<Config>\\n"
+	echo -e "  ${RED}<Config>\\n\\n ${BLUE} * Press 0..9${RED}"
 	mapfile x <$ConfigDir/config
 		i=0
 	    ii=$((${#x[*]} - 1))
@@ -373,7 +382,7 @@ if [[ ${REPLY} == c ]];then
 		 do
 			echo -e ""\\n   ${RED}  Press:${BLUE} $i${RED} to change status of ${BLUE}${x[$i]}${RED} ""
 			if [[ ${x[$i]} = show_alerts* ]];then
-			  
+
 			   echo -e "   ${BLUE} Info"
 			   echo -e "   ${BLUE} * ${RED}Shows a notification when adding/deleting favorites."
 			   echo -e "   ${BLUE} * ${RED}Currently only shows notification when a shortcut key passes the argument, e.g. music_thingy add_favorite"
@@ -386,8 +395,8 @@ if [[ ${REPLY} == c ]];then
  return
 fi
 
-if [[ $REPLY == f ]];then	
-		 if [[ -s $favs ]];then 
+if [[ $REPLY == f ]];then
+		 if [[ -s $favs ]];then
 		mapfile playlist < $favs
 		nu="0-$((${#playlist[*]}-1))"
 		shuffle="$(shuf -i $nu -n 1)"
@@ -399,13 +408,13 @@ if [[ $REPLY == f ]];then
        source $config
        [[ $debug_disable_player == 1 ]] && return 0
        exec -a music_thingy $player --quiet ${tr}) > /tmp/music_thingy.pipe &
-       
-      
+
+
         url="${pl//,/\\n *}"
 		url="${url//\ -\ /\\n * }"
 		url="${url//.\ /\\n * }"
 		url=(${url//#/\\n * })
-		echo ${url[*]} > /tmp/music_thingy.info	
+		echo ${url[*]} > /tmp/music_thingy.info
 		fi
 fi
 
@@ -415,38 +424,40 @@ if [[ $REPLY == s || ! $REPLY ]];then
 		pl="${playlist[$shuffle]}"
 		tr=(${pl//#/\/ })
 		tr=${tr[0]}
-        xcleanup_thingy	
+        xcleanup_thingy
 
        (echo $BASHPID > /tmp/music_thingy.pid
        source $config
        [[ $debug_disable_player == 1 ]] && return 0
-       
+
        exec -a music_thingy $player --quiet ${tr}) > /tmp/music_thingy.pipe &
-    
+
         url="${pl//,/\\n *}"
 		url="${url//\ -\ /\\n * }"
 		url="${url//.\ /\\n * }"
 		url=(${url//#/\\n * })
-		echo ${url[*]} > /tmp/music_thingy.info	
+		echo ${url[*]} > /tmp/music_thingy.info
 fi
 
 main "$@"
 
-cat "/tmp/music_thingy.pipe" > /tmp/music_thingy.title &
-info="$(</tmp/music_thingy.title)"
-#info1="$(</tmp/music_thingy.title)"
+if [[ $REPLY != - && $REPLY != + && $REPLY != a && $REPLY != d && $REPLY != h && $REPLY != c && $REPLY != l && ! $REPLY =~ ^[0-9]$  ]];then
+cat "/tmp/music_thingy.pipe" > /tmp/music_thingy.meta &
+
+fi
+info="$(</tmp/music_thingy.meta)"
 
 
+#info="${info//AO:\ \[openal\]\ / ${BLUE}  * }"
+#info="${info//\[openal\]\ / ${BLUE}  * }"
+info=${info//File\ tags:/$(vol) }
 
-info="${info//AO:\ \[openal\]\ / ${BLUE}  * }"
-info="${info//\[openal\]\ / ${BLUE}  * }"
-info=${info//File\ tags:/  ${BLUE} * $(vol)}
-info=${info//-aid=1/}
-info=${info//\(+\)\ / ${BLUE} * }
-info=${info//icy-title:/ ${BLUE} * Title: }
-echo "$info"
-#echo ""
-#echo "$info1"
+#info=${info//-aid=1/}
+#info=${info//\(+\)\ / ${BLUE} * }
+info=${info//\ icy-title:/Title:}
+
+echo -e "${BLUE}${info}" | sed s/^/\ \ \ *\ /
+
 
 footer "$@"
 }
@@ -454,20 +465,20 @@ footer "$@"
 main() {
 tput -S <<!
 clear
-cup 10 
+cup 10
 smso
 bold
 !
 echo -e "${BLUE}                   Interactive Music Thingy               \n             https://github.com/ablyssx74/                \n   \
         [S]huffle/[Q]uit   Vol +/-   [H]elp Menu       \n       \n     \n   \n \n"
-        
+
 tput rmso
 
 
 [[ ! -p /tmp/music_thingy.pipe ]] && mkfifo /tmp/music_thingy.pipe
 
 
-startplaying "$@"	
+startplaying "$@"
 
 
 
@@ -475,15 +486,15 @@ startplaying "$@"
 
 while true
 	do
-		 player="mpv"		 
-		 BLUE="$(tput setaf 12)"    
+		 player="mpv"
+		 BLUE="$(tput setaf 12)"
 		 RED="$(tput setaf 9)"
 		 GREEN="$(tput setaf 46)"
 		 NORM="$(tput setaf 15)"
-		 ORANGE="$(tput setaf 9)" 
-		 BLACK="$(tput setaf 234)" 
-		 REPLY=${REPLY,,}		 		 
-		 pids="$(ps | grep music_thing)"	 
+		 ORANGE="$(tput setaf 9)"
+		 BLACK="$(tput setaf 234)"
+		 REPLY=${REPLY,,}
+		 pids="$(ps | grep music_thing)"
 		 x=($(which ${player%}))
 		if [[ ${OS_NAME} == haiku ]]; then
 				 [[ -z ${x[0]} ]] && echo -e "\\n${ORANGE}${player}${RED} not installed. ${BLUE}Please install it with pkgman install mpv. :-)\\n" && break
@@ -493,9 +504,9 @@ while true
 		 if [[ ${REPLY} == q ]];then
 			 echo -e "\\n\\n${BLUE}bye!\\n\\n"
 		 	 xcleanup_thingy
-		      break		 
+		      break
 		  else
-		  	read -s -r -p "$(main "$@")" -n 1	
-		  	
-		 fi	 
+		  	read -s -r -p "$(main "$@")" -n 1
+
+		 fi
 	done
