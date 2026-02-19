@@ -459,7 +459,7 @@ while true
 		 ORANGE="$(tput setaf 9)" 
 		 BLACK="$(tput setaf 234)" 
 		 REPLY=${REPLY,,}		 		 
-		 pids="$(ps | grep music_thing)"	 
+		 #pids="$(ps | grep music_thing)"
 		 x=($(which ${player%}))
 		if [[ ${OS_NAME} == haiku ]]; then
 				 [[ -z ${x[0]} ]] && echo -e "\\n${ORANGE}${player}${RED} not installed. ${BLUE}Please install it with pkgman install mpv. :-)\\n" && break
