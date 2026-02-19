@@ -319,7 +319,7 @@ done
 title="$(</tmp/music_thingy.info)"
 title="${title/\\n\ \*/\\n   *}"
 title="${title//\\n\ \*/,}"
-	echo -e " * $title \n   * Total Playlists ${#playlist[*]}   "
+	echo -e "   * $title \n   * Total Playlists ${#playlist[*]}   "
 }
 xfooter(){
 	[[ $REPLY == f && -s $favs ]] && echo "${RED}Shuffling Favorites${BLUE} (-:"
@@ -451,7 +451,7 @@ info="$(</tmp/music_thingy.meta)"
 #info="${info//AO:\ \[openal\]\ / ${BLUE}  * }"
 #info="${info//\[openal\]\ / ${BLUE}  * }"
 info=${info//File\ tags:/$(vol) }
-
+info=${info//Exiting...\ \(Quit\)/}
 #info=${info//-aid=1/}
 #info=${info//\(+\)\ / ${BLUE} * }
 info=${info//\ icy-title:/Title:}
@@ -463,14 +463,16 @@ footer "$@"
 }
 
 main() {
+
 tput -S <<!
 clear
+setab 0
 cup 10
 smso
 bold
 !
-echo -e "${BLUE}                   Interactive Music Thingy               \n             https://github.com/ablyssx74/                \n   \
-        [S]huffle/[Q]uit   Vol +/-   [H]elp Menu       \n       \n     \n   \n \n"
+echo -e "${BLACK}                   Interactive Music Thingy               \n             https://github.com/ablyssx74/                \n   \
+        [S]huffle/[Q]uit   Vol +/-   [H]elp Menu       \n       \n     \n   \n \n${BLUE}"
 
 tput rmso
 
@@ -494,7 +496,7 @@ while true
 		 ORANGE="$(tput setaf 9)"
 		 BLACK="$(tput setaf 234)"
 		 REPLY=${REPLY,,}
-		 pids="$(ps | grep music_thing)"
+		 #pids="$(ps | grep music_thing)"
 		 x=($(which ${player%}))
 		if [[ ${OS_NAME} == haiku ]]; then
 				 [[ -z ${x[0]} ]] && echo -e "\\n${ORANGE}${player}${RED} not installed. ${BLUE}Please install it with pkgman install mpv. :-)\\n" && break
