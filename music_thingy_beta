@@ -19,7 +19,7 @@ if [[ ${OS_NAME} == haiku ]]; then
 		 favs="$ConfigDir/favorites"
 		 config="$ConfigDir/config"
 		 if [[ ! -s $config ]];then
-				declare -A _config=( [show_alerts]="\"1\"" [debug_disable_player]="\"1\"" [title]="\"1\"" )
+				declare -A _config=( [show_alerts]="\"1\"" [debug_disable_player]="\"0\"" [title]="\"0\"" )
 					for value in "${!_config[@]}"
 						do
 							echo "$value=${_config[$value]}" >> $config
@@ -38,7 +38,7 @@ if [[ ${OS_NAME} == linux ]]; then
 		 favs="$ConfigDir/favorites"
 		 config="$ConfigDir/config"
 		 if [[ ! -s $config ]];then
-				declare -A _config=( [show_alerts]="\"1\"" [debug_disable_player]="\"1\"" [title]="\"1\"" )
+				declare -A _config=( [show_alerts]="\"1\"" [debug_disable_player]="\"0\"" [title]="\"0\"" )
 					for value in "${!_config[@]}"
 						do
 							echo "$value=${_config[$value]}" >> $config
@@ -408,10 +408,10 @@ while [[ $var -le $v ]]
 
 done
 
-title="$(</tmp/music_thingy.info)"
-title="${title/\\n\ \*/\\n   *}"
-title="${title//\\n\ \*/,}"
-	echo -e "   * $title \n   * Total Playlists ${#playlist[*]}   "
+streamtitle="$(</tmp/music_thingy.info)"
+streamtitle="${streamtitle/\\n\ \*/\\n   *}"
+streamtitle="${streamtitle//\\n\ \*/,}"
+
 }
 xfooter(){
 	[[ $REPLY == f && -s $favs ]] && echo "${RED}Shuffling Favorites${BLUE} (-:"
@@ -493,7 +493,7 @@ if [[ $REPLY == f ]];then
        (echo $BASHPID > /tmp/music_thingy.pid
        source $config
        [[ $debug_disable_player == 1 ]] && return 0
-       exec -a music_thingy $player --quiet ${tr}) >&3 &
+       exec -a music_thingy $player --quiet ${tr}) >&${fd} &
 
 
         url="${pl//,/\\n *}"
@@ -516,7 +516,7 @@ if [[ $REPLY == s || ! $REPLY ]];then
        source $config
        [[ $debug_disable_player == 1 ]] && return 0
 
-       exec -a music_thingy $player --quiet ${tr}) >&3 &
+       exec -a music_thingy $player --quiet ${tr}) >&${fd} &
 
         url="${pl//,/\\n *}"
 		url="${url//\ -\ /\\n * }"
@@ -526,40 +526,17 @@ if [[ $REPLY == s || ! $REPLY ]];then
 fi
 
 main "$@"
-echo -e "${BLUE}${info}   * Vol: $(vol)"
 
 if [[ $REPLY != - && $REPLY != + && $REPLY != a && $REPLY != d && $REPLY != h && $REPLY != c && $REPLY != l && ! $REPLY =~ ^[0-9]$  ]];then
 
-while read -t 3 -u 3 info
+
+while read -t 3 -u ${fd} info
 do
-#mapfile line <<< "$info"
-#	for line in "$info"
-#		do
 
-			#line=($info)
-#			i=0
-#			ii=${#line[*]}
-#				while [[ $i -le $ii ]]
-#				do
-#					echo "$ii=\"${line[$i]}\""
-#					((i++))
-#				done
-#		done
-
-#info="${info//AO:\ \[openal\]\ / ${BLUE}  * }"
-#info="${info//\[openal\]\ / ${BLUE}  * }"
-#info=${info//File\ tags:/$(vol) }
-#info=${info//Exiting...\ \(Quit\)/}
-#info=${info//-aid=1/}
-#info=${info//\(+\)\ / ${BLUE} * }
-#info=${info//\ icy-title:/Title:}
-# | sed s/^/\ \ \ *\ /
 if [[ $info == icy-title* ]];then
 title="${info//icy-title:/}"
-#export test="x $title"
-echo -e "${BLUE}   * Title:$title"
-#[[ -n $title ]] && echo "meta_title=\"$title\"" > ./reply.txt
-
+#echo -e "${BLUE}   *${title}" >&4
+echo -e "${BLUE}   *${title}"
 fi
 
 done | pv -rN "
@@ -570,8 +547,16 @@ $(printf '\033[H\033[2J') ${BLUE}
 
 
          Loading data, please wait..."
+
+
 fi
-exec 3<&-
+
+exec {fd}<&-
+
+
+echo -e "   * $streamtitle"
+echo -e "   * Total Playlists ${#playlist[*]}   "
+echo -e "${BLUE}${info}   * Vol: $(vol)"
 
 echo -e "\\n\\n\\n\\n\\n\\n\\n"
 footer "$@"
@@ -591,12 +576,10 @@ echo -e "${BLUE}                   Interactive Music Thingy               \n    
 
 tput rmso
 
-PIPE=$(mktemp -u)
-mkfifo "$PIPE"
-exec 3<>"$PIPE"
-rm $PIPE
-
-
+_data=$(mktemp -u)
+mkfifo "$_data"
+exec {fd}<>"$_data"
+rm $_data
 
 startplaying "$@"
 
