@@ -11,9 +11,7 @@ shopt -s nocasematch
 
 OS_NAME=$(uname -s)
 if [[ ${OS_NAME} == haiku ]]; then
-		 notify="notify"
-		 x=($(which ${notify%}))
-		 [[ -n ${x[0]} ]] && notify="notify --title MusicThingy "
+		 notify="notify --title MusicThingy "
 		 ConfigDir=${HOME}/config/settings/music_thingy
 	     [[ ! -d $ConfigDir ]] && mkdir $ConfigDir
 		 [[ ! -e $ConfigDir/favorites ]] && touch $ConfigDir/favorites
@@ -21,29 +19,48 @@ if [[ ${OS_NAME} == haiku ]]; then
 		 favs="$ConfigDir/favorites"
 		 config="$ConfigDir/config"
 		 if [[ ! -s $config ]];then
-			    echo -e "show_alerts=0" > $config
-			    echo -e "debug_disable_player=0" >> $config
+				declare -A _config=( [show_alerts]="\"1\"" [debug_disable_player]="\"1\"" [title]="\"1\"" )
+					for value in "${!_config[@]}"
+						do
+							echo "$value=${_config[$value]}" >> $config
+						done
+			    #echo -e "show_alerts=0" > $config
+			    #echo -e "debug_disable_player=0" >> $config
 		 fi
 fi
 
 if [[ ${OS_NAME} == linux ]]; then
-		 notify="notify-send"
-		 x=($(which ${notify%}))
-		 [[ -n ${x[0]} ]] && notify="notify-send -a MusicThingy"
+		 notify="notify-send -a MusicThingy"
 		 ConfigDir=${HOME}/.config/music_thingy
-	 	 [[ ! -d $ConfigDir ]] && mkdir $ConfigDir
+	 	 [[ ! -d $ConfigDir ]] && mkdir -p $ConfigDir
 		 [[ ! -e $ConfigDir/favorites ]] && touch $ConfigDir/favorites
 		 [[ ! -e $ConfigDir/config ]] && touch $ConfigDir/config
 		 favs="$ConfigDir/favorites"
 		 config="$ConfigDir/config"
 		 if [[ ! -s $config ]];then
-			    echo -e "show_alerts=1" > $config
-			    echo -e "debug_disable_player=0" >> $config
+				declare -A _config=( [show_alerts]="\"1\"" [debug_disable_player]="\"1\"" [title]="\"1\"" )
+					for value in "${!_config[@]}"
+						do
+							echo "$value=${_config[$value]}" >> $config
+						done
+			    #echo -e "show_alerts=1" > $config
+			    #echo -e "debug_disable_player=0" >> $config
 		 fi
 
 fi
 
+
+
 source $config
+if [[ ! $_config ]];then
+	rm $config
+	declare -A _config=([show_alerts]="\"$show_alerts\"" [debug_disable_player]="\"$debug_disable_player\"" [title]="\"$title\"")
+		for value in "${!_config[@]}"
+			do
+				echo "$value=${_config[$value]}" >> $config
+			done
+	source $config
+fi
 
 if [[ ! $show_alerts ]];then
 	echo -e "show_alerts=0" > $config
@@ -251,16 +268,79 @@ main(){
 mapfile x <$ConfigDir/config
 var=0
 v=$((${#x[*]} - 1))
+#while [[ $var -le $v ]]
+#	do
+
+
+#		name="${x[$var]}"
+#		match="="
+#		name="${name%$match*}"
+#		#echo "$var: ${name}"
+
+
+
+
+
+#		if [[ $REPLY == $var ]];then
+
+#			for value in "${!_config[@]}"
+#				do
+#					fc=${_config[$value]//\"}
+
+					#####Show_alerts
+#					if [[ $REPLY == ${fc} ]];then
+#						if [[ $show_alerts == ${fc} ]];then
+#						   rm $config
+#						   declare -A _config=( [show_alerts]="\"$REPLY\"" [debug_disable_player]="\"$debug_disable_player\"" [title]="\"$title\"" )
+#							for value in "${!_config[@]}"
+#								do
+#									echo "$value=${_config[$value]}" >> $config
+#								done
+#								source $config
+#								echo "showalerts $show_alerts"
+#								return
+#						fi
+
+#					fi
+
+#					if [[ $REPLY != ${fc} ]];then
+#						if [[ $show_alerts  == ${fc} ]];then
+#						   rm $config
+#						   declare -A _config=( [show_alerts]="\"$REPLY\"" [debug_disable_player]="\"$debug_disable_player\"" [title]="\"$title\"" )
+#							for value in "${!_config[@]}"
+#								do
+#									echo "$value=${_config[$value]}" >> $config
+#								done
+#								source $config
+#								echo "showalerts $show_alerts"
+#						fi
+
+#					fi
+					#####/Show_alerts
+
+#				done
+
+#		fi
+
+#		((var++))
+
+
+#	done
+#return
+
+
+
 
 while [[ $var -le $v ]]
 	do
 
 		#echo $var:${x[$var]}
+
 		if [[ $REPLY == $var ]];then
 		echo -e "  ${RED}<Config>\\n\\n ${BLUE} * Press 0..9${RED}"
-
-		a=""$var:${x[$var]}""
-		name=""${x[$var]}""
+		x=${x//\"/}
+		a="$var:${x[$var]}"
+		name="${x[$var]}"
 		c="${#name}"
 		((c--)) && ((c--))
 		value=${name[*]:$c}
@@ -269,6 +349,15 @@ while [[ $var -le $v ]]
 		n1=${name%??}$value
 		n2=${name%??}$cv
 
+#		echo "x $x"
+#		echo "a $a"
+#		echo "var $var"
+#		echo "name $name"
+#		echo "c $c"
+#		echo "value $value"
+
+#		echo "n1 $n1"
+#		echo "n2 $n2"
 
 	    #echo Saving\ $n1\to $n2
 	    #i=0
@@ -283,16 +372,21 @@ while [[ $var -le $v ]]
 			mapfile x2 <$ConfigDir/config
 			var2=0
 			v2=$((${#x2[*]} - 1))
+
 				while [[ $var2 -le $v2 ]]
 					do
 						try=${x2[$var2]}
+						try=${try//\"/}
 						arr+=(${try/$n1/$n2})
-
 						((var2++))
+
 					done
 
-					try2=""${arr[*]}""
-					echo -e ${try2// /\\n} > $ConfigDir/config
+					try2="${arr[*]}"
+					try2="${try2//\"/}"
+					echo -e "${try2// /\\n}" > $ConfigDir/config
+
+					#echo -e "${try2}" | sed s/$/\"\\n/ > $ConfigDir/config
 					source $config
 
 					mapfile x3 <$ConfigDir/config
@@ -300,11 +394,12 @@ while [[ $var -le $v ]]
 							ii=$((${#x3[*]} - 1))
 							while [[ $i -le $ii ]]
 								do
-								echo -e ""        ${BLUE}     * ${RED}Updated: ${BLUE}${x3[$i]}${RED}""
+								echo -e ""        ${BLUE}     * ${RED}Status: ${BLUE}${x3[$i]}${RED}""
 							((i++))
 						done
 
-						echo -e "\\n      ${RED}\\n  </Config>\\n${BLUE}"
+						echo -e "\\n${RED}  </Config>\\n${BLUE}\\n\\n\\n\\n\\n"
+						footer
 			exit 0
 		fi
 
@@ -327,7 +422,7 @@ xfooter(){
 
 }
 footer(){
-	echo -e "\\n\\n\\n\\n\\n${ORANGE}Interactive Music Thingy${BLUE}~ $:-) $(xfooter) "
+	echo -e "\\n\\n${ORANGE}Interactive Music Thingy${BLUE}~ $:-) $(xfooter) "
 }
 if [[ $REPLY == a ]];then
     if [[ -s $favs ]];then ## make sure favorits is not empty
@@ -377,16 +472,10 @@ if [[ ${REPLY} == c ]];then
 	    ii=$((${#x[*]} - 1))
 		while [[ $i -le $ii ]]
 		 do
-			echo -e ""\\n   ${RED}  Press:${BLUE} $i${RED} to change status of ${BLUE}${x[$i]}${RED} ""
-			if [[ ${x[$i]} = show_alerts* ]];then
-
-			   echo -e "   ${BLUE} Info"
-			   echo -e "   ${BLUE} * ${RED}Shows a notification when adding/deleting favorites."
-			   echo -e "   ${BLUE} * ${RED}Currently only shows notification when a shortcut key passes the argument, e.g. music_thingy add_favorite"
-			fi
+			echo -ne "${BLUE}  * ${RED}Status: ${BLUE}${x[$i]}"
 			((i++))
 		done
-	echo -e "${BLUE}  ${RED}\\n  </Config>\\n${BLUE}"
+	echo -en "${BLUE}  ${RED}\\n  </Config>\\n${BLUE}\\n\\n\\n\\n\\n\\n"
 
 	footer
  return
@@ -443,8 +532,19 @@ if [[ $REPLY != - && $REPLY != + && $REPLY != a && $REPLY != d && $REPLY != h &&
 
 while read -t 3 -u 3 info
 do
+#mapfile line <<< "$info"
+#	for line in "$info"
+#		do
 
-
+			#line=($info)
+#			i=0
+#			ii=${#line[*]}
+#				while [[ $i -le $ii ]]
+#				do
+#					echo "$ii=\"${line[$i]}\""
+#					((i++))
+#				done
+#		done
 
 #info="${info//AO:\ \[openal\]\ / ${BLUE}  * }"
 #info="${info//\[openal\]\ / ${BLUE}  * }"
@@ -452,8 +552,15 @@ do
 #info=${info//Exiting...\ \(Quit\)/}
 #info=${info//-aid=1/}
 #info=${info//\(+\)\ / ${BLUE} * }
-info=${info//\ icy-title:/Title:}
-echo -e "${BLUE}${info}" | sed s/^/\ \ \ *\ /
+#info=${info//\ icy-title:/Title:}
+# | sed s/^/\ \ \ *\ /
+if [[ $info == icy-title* ]];then
+title="${info//icy-title:/}"
+#export test="x $title"
+echo -e "${BLUE}   * Title:$title"
+#[[ -n $title ]] && echo "meta_title=\"$title\"" > ./reply.txt
+
+fi
 
 done | pv -rN "
 $(printf '\033[H\033[2J') ${BLUE} 
@@ -465,6 +572,8 @@ $(printf '\033[H\033[2J') ${BLUE}
          Loading data, please wait..."
 fi
 exec 3<&-
+
+echo -e "\\n\\n\\n\\n\\n\\n\\n"
 footer "$@"
 
 }
@@ -507,21 +616,26 @@ while true
 		 testplayer=($(which ${player%}))
 		 pv="pv"
 		 testpv=($(which ${pv%}))
-		if [[ ${OS_NAME} == haiku ]]; then
-				 [[ -z ${testplayer[0]} ]] && echo -e "\\n${ORANGE}${player}${RED} not installed. ${BLUE}Please install it with pkgman install mpv. :-)\\n" && break
-       			 [[ -z ${testpv[0]} ]] && echo -e "\\n${ORANGE}pv${RED} not installed. ${BLUE}Please install it with pkgman install pv. :-)\\n" && break
+		 if [[ ${OS_NAME} == haiku ]]; then
+			notify="notify"
+			notify=($(which ${notify%}))
+				[[ -z ${notify[0]} ]] &&  echo -e "\\n${ORANGE}notify${RED} not installed. ${BLUE}Please install it with your package manager. :-)\\n" && break
 
-        elif [[ ${OS_NAME} == linux ]]; then
-				 [[ -z ${testplayer[0]} ]] && echo -e "\\n${ORANGE}${player}${RED} not installed. ${BLUE}Please install it with your OS package manager.  :-)\\n" && break
-		       	 [[ -z ${testpv[0]} ]] && echo -e "\\n${ORANGE}pv${RED} not installed. ${BLUE}Please install it with your OS package manager. :-)\\n" && break
+		elif [[ ${OS_NAME} == linux ]]; then
+			notify="notify-send"
+			notify=($(which ${notify%}))
+				[[ -z ${notify[0]} ]] && echo -e "\\n${ORANGE}notify-send${RED} not installed. ${BLUE}Please install it with your package manager. :-)\\n" && break
 
 		fi
-		 if [[ ${REPLY} == q ]];then
+		[[ -z ${testplayer[0]} ]] && echo -e "\\n${ORANGE}${player}${RED} not installed. ${BLUE}Please install it with your package manager.  :-)\\n" && break
+		[[ -z ${testpv[0]} ]] && echo -e "\\n${ORANGE}pv${RED} not installed. ${BLUE}Please install it with your package manager. :-)\\n" && break
+
+		if [[ ${REPLY} == q ]];then
 			 echo -e "\\n\\n${BLUE}bye!\\n\\n"
 		 	 xcleanup_thingy
 		      break
 		  else
-		  	read -s -p "$(main "$@")" -n 1
+		  	 read -s -p "$(main "$@")" -n 1
 
-		 fi
+		fi
 	done
