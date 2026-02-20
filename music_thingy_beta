@@ -441,14 +441,9 @@ echo -e "${BLUE}${info}   * Vol: $(vol)"
 
 if [[ $REPLY != - && $REPLY != + && $REPLY != a && $REPLY != d && $REPLY != h && $REPLY != c && $REPLY != l && ! $REPLY =~ ^[0-9]$  ]];then
 
-
-
-
-#exec 3<"/tmp/music_thingy.meta"
 while read -t 3 -u 3 info
 do
 
-#info="$(</tmp/music_thingy.meta)"
 
 
 #info="${info//AO:\ \[openal\]\ / ${BLUE}  * }"
@@ -458,13 +453,17 @@ do
 #info=${info//-aid=1/}
 #info=${info//\(+\)\ / ${BLUE} * }
 info=${info//\ icy-title:/Title:}
-
 echo -e "${BLUE}${info}" | sed s/^/\ \ \ *\ /
-#cat <3 &
-done
+
+done | pv -rN "
+$(printf '\033[H\033[2J') ${BLUE} 
+
+ 		 Interactive Music Thingy
+
+
+
+         Loading data, please wait..."
 fi
-
-
 exec 3<&-
 footer "$@"
 
@@ -478,7 +477,7 @@ smso
 bold
 !
 printf "\033[30m\033[0m\n"
-echo -e "${BLUE}                   Interactive Music Thingy               \n             https://github.com/ablyssx74/                \n   \
+echo -e "${BLUE}                   Interactive Music Thingy               \n                 https://github.com/ablyssx74                \n   \
         [S]huffle/[Q]uit   Vol +/-   [H]elp Menu       \n       \n     \n   \n \n"
 
 tput rmso
@@ -498,7 +497,6 @@ startplaying "$@"
 
 while true
 	do
-
 		 player="mpv"
 		 BLUE="$(tput setaf 12)"
 		 RED="$(tput setaf 9)"
@@ -506,13 +504,17 @@ while true
 		 NORM="$(tput setaf 15)"
 		 ORANGE="$(tput setaf 9)"
 		 BLACK="$(tput setaf 234)"
-		 REPLY=${REPLY,,}
-		 #pids="$(ps | grep music_thing)"
-		 x=($(which ${player%}))
+		 testplayer=($(which ${player%}))
+		 pv="pv"
+		 testpv=($(which ${pv%}))
 		if [[ ${OS_NAME} == haiku ]]; then
-				 [[ -z ${x[0]} ]] && echo -e "\\n${ORANGE}${player}${RED} not installed. ${BLUE}Please install it with pkgman install mpv. :-)\\n" && break
+				 [[ -z ${testplayer[0]} ]] && echo -e "\\n${ORANGE}${player}${RED} not installed. ${BLUE}Please install it with pkgman install mpv. :-)\\n" && break
+       			 [[ -z ${testpv[0]} ]] && echo -e "\\n${ORANGE}pv${RED} not installed. ${BLUE}Please install it with pkgman install pv. :-)\\n" && break
+
         elif [[ ${OS_NAME} == linux ]]; then
-				 [[ -z ${x[0]} ]] && echo -e "\\n${ORANGE}${player}${RED} not installed. ${BLUE}Please install it with your OS package manager.  :-)\\n" && break
+				 [[ -z ${testplayer[0]} ]] && echo -e "\\n${ORANGE}${player}${RED} not installed. ${BLUE}Please install it with your OS package manager.  :-)\\n" && break
+		       	 [[ -z ${testpv[0]} ]] && echo -e "\\n${ORANGE}pv${RED} not installed. ${BLUE}Please install it with your OS package manager. :-)\\n" && break
+
 		fi
 		 if [[ ${REPLY} == q ]];then
 			 echo -e "\\n\\n${BLUE}bye!\\n\\n"
