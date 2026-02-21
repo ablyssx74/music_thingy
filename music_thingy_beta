@@ -120,7 +120,7 @@ elif [[ ${OS_NAME} == linux ]]; then
   		  [[ $REPLY == - ]] && amixer -q set Master $(($soundlevel - 1))% && s=$(($soundlevel - 1))%
   		  [[ $REPLY == m ]] && amixer -q set Master mute && s=Muted
   		  [[ $REPLY == u ]] && amixer -q set Master unmute
-  		  echo "${s}"
+  		  echo "Vol" ${s}"
 	done
 fi
 }
@@ -556,7 +556,7 @@ exec {fd}<&-
 
 echo -e "   * $streamtitle"
 echo -e "   * Total Playlists ${#playlist[*]}   "
-echo -e "${BLUE}${info}   * Vol: $(vol)"
+echo -e "${BLUE}${info}   * $(vol)"
 
 echo -e "\\n\\n\\n\\n\\n\\n\\n"
 footer "$@"
