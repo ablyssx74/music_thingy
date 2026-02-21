@@ -19,13 +19,11 @@ if [[ ${OS_NAME} == haiku ]]; then
 		 favs="$ConfigDir/favorites"
 		 config="$ConfigDir/config"
 		 if [[ ! -s $config ]];then
-				declare -A _config=( [show_alerts]="\"1\"" [debug_disable_player]="\"0\"" [title]="\"0\"" )
+				declare -A _config=( [show_alerts]="\"1\"" [debug_disable_player]="\"0\"" [optionA]="\"0\"" )
 					for value in "${!_config[@]}"
 						do
 							echo "$value=${_config[$value]}" >> $config
 						done
-			    #echo -e "show_alerts=0" > $config
-			    #echo -e "debug_disable_player=0" >> $config
 		 fi
 fi
 
@@ -38,13 +36,11 @@ if [[ ${OS_NAME} == linux ]]; then
 		 favs="$ConfigDir/favorites"
 		 config="$ConfigDir/config"
 		 if [[ ! -s $config ]];then
-				declare -A _config=( [show_alerts]="\"1\"" [debug_disable_player]="\"0\"" [title]="\"0\"" )
+				declare -A _config=( [show_alerts]="\"1\"" [debug_disable_player]="\"0\"" [optionA]="\"0\"" )
 					for value in "${!_config[@]}"
 						do
 							echo "$value=${_config[$value]}" >> $config
 						done
-			    #echo -e "show_alerts=1" > $config
-			    #echo -e "debug_disable_player=0" >> $config
 		 fi
 
 fi
@@ -54,7 +50,7 @@ fi
 source $config
 if [[ ! $_config ]];then
 	rm $config
-	declare -A _config=([show_alerts]="\"$show_alerts\"" [debug_disable_player]="\"$debug_disable_player\"" [title]="\"$title\"")
+	declare -A _config=([show_alerts]="\"$show_alerts\"" [debug_disable_player]="\"$debug_disable_player\"" [optionA]="\"0\"" )
 		for value in "${!_config[@]}"
 			do
 				echo "$value=${_config[$value]}" >> $config
@@ -84,9 +80,7 @@ mapfile pids <<< $pids
 
 xcleanup_thingy(){
 echo
-#exec 3>&-
 #cleanup_thingy
-
 [[ -e /tmp/music_thingy.pid ]] && kill -1 $(</tmp/music_thingy.pid) && rm /tmp/music_thingy.pid
 
 }
@@ -264,7 +258,7 @@ fi
 
 startplaying(){
 
-main(){
+header(){
 mapfile x <$ConfigDir/config
 var=0
 v=$((${#x[*]} - 1))
@@ -291,7 +285,7 @@ v=$((${#x[*]} - 1))
 #					if [[ $REPLY == ${fc} ]];then
 #						if [[ $show_alerts == ${fc} ]];then
 #						   rm $config
-#						   declare -A _config=( [show_alerts]="\"$REPLY\"" [debug_disable_player]="\"$debug_disable_player\"" [title]="\"$title\"" )
+#						   declare -A _config=( [show_alerts]="\"$REPLY\"" [debug_disable_player]="\"$debug_disable_player\"" [optionA]="\"0\"" )
 #							for value in "${!_config[@]}"
 #								do
 #									echo "$value=${_config[$value]}" >> $config
@@ -306,7 +300,7 @@ v=$((${#x[*]} - 1))
 #					if [[ $REPLY != ${fc} ]];then
 #						if [[ $show_alerts  == ${fc} ]];then
 #						   rm $config
-#						   declare -A _config=( [show_alerts]="\"$REPLY\"" [debug_disable_player]="\"$debug_disable_player\"" [title]="\"$title\"" )
+#						   declare -A _config=( [show_alerts]="\"$REPLY\"" [debug_disable_player]="\"$debug_disable_player\"" [optionA]="\"0\"" )
 #							for value in "${!_config[@]}"
 #								do
 #									echo "$value=${_config[$value]}" >> $config
@@ -349,26 +343,6 @@ while [[ $var -le $v ]]
 		n1=${name%??}$value
 		n2=${name%??}$cv
 
-#		echo "x $x"
-#		echo "a $a"
-#		echo "var $var"
-#		echo "name $name"
-#		echo "c $c"
-#		echo "value $value"
-
-#		echo "n1 $n1"
-#		echo "n2 $n2"
-
-	    #echo Saving\ $n1\to $n2
-	    #i=0
-	    #ii=$((${#x[*]} - 1))
-		#while [[ $i -le $ii ]]
-		# do
-		#	echo ""Press:$i to change status of ${x[$i]}""
-		#	((i++))
-		#done
-
-
 			mapfile x2 <$ConfigDir/config
 			var2=0
 			v2=$((${#x2[*]} - 1))
@@ -386,7 +360,6 @@ while [[ $var -le $v ]]
 					try2="${try2//\"/}"
 					echo -e "${try2// /\\n}" > $ConfigDir/config
 
-					#echo -e "${try2}" | sed s/$/\"\\n/ > $ConfigDir/config
 					source $config
 
 					mapfile x3 <$ConfigDir/config
@@ -418,7 +391,8 @@ xfooter(){
 	[[ $REPLY == f && ! -s $favs ]] && echo "${RED}Favorites is empty. Press \"s\" then \"a\" to add to favorites.${BLUE} (-:"
 	[[ $REPLY == s ]] && echo "${RED}Shuffling All${BLUE} (-:"
 	[[ $REPLY == a ]] && echo "${RED}Added to favorites. Press \"F\" to shuffle favorites. Press \"L\" to list playlist.${BLUE} (-:"
-	[[ $REPLY == d ]] && echo "${RED}Deleted from favorites. Press \"F\" to shuffle favorites. Press \"L\" to list playlist.${BLUE} (-:"
+	[[ $REPLY == d && -s $favs ]] && echo "${RED}Deleted from favorites. Press \"F\" to shuffle favorites. Press \"L\" to list playlist.${BLUE} (-:"
+	[[ $REPLY == d && ! -s $favs ]] && echo "${RED}Favorites is empty.${BLUE} (-:"
 
 }
 footer(){
@@ -504,7 +478,7 @@ if [[ $REPLY == f ]];then
 		fi
 fi
 
-if [[ $REPLY == s || ! $REPLY ]];then
+if [[ $REPLY == s ]];then
         nu="0-$((${#playlist[*]}-1))"
 		shuffle="$(shuf -i $nu -n 1)"
 		pl="${playlist[$shuffle]}"
@@ -525,9 +499,13 @@ if [[ $REPLY == s || ! $REPLY ]];then
 		echo ${url[*]} > /tmp/music_thingy.info
 fi
 
-main "$@"
+header "$@"
 
-if [[ $REPLY != - && $REPLY != + && $REPLY != a && $REPLY != d && $REPLY != h && $REPLY != c && $REPLY != l && ! $REPLY =~ ^[0-9]$  ]];then
+
+
+if [[ -n $REPLY && ! $REPLY =~ [^[:alnum:][:space:]] && ! $REPLY =~ ^[0-9]$ ]];then
+
+
 
 
 while read -t 3 -u ${fd} info
@@ -535,8 +513,8 @@ do
 
 if [[ $info == icy-title* ]];then
 title="${info//icy-title:/}"
-#echo -e "${BLUE}   *${title}" >&4
 echo -e "${BLUE}   *${title}"
+
 fi
 
 done | pv -rN "
@@ -548,6 +526,11 @@ $(printf '\033[H\033[2J') ${BLUE}
 
          Loading data, please wait..."
 
+
+#while IFS= read -t 3 -r -u ${fd} info
+#do
+#echo $info
+#done
 
 fi
 
