@@ -81,6 +81,7 @@ mapfile pids <<< $pids
 xcleanup_thingy(){
 echo
 #cleanup_thingy
+[[ -e /tmp/music_thingy.title ]] && rm /tmp/music_thingy.title
 [[ -e /tmp/music_thingy.pid ]] && kill -1 $(</tmp/music_thingy.pid) && rm /tmp/music_thingy.pid
 
 }
@@ -396,7 +397,9 @@ xfooter(){
 
 }
 footer(){
-	echo -e "\\n\\n${ORANGE}Interactive Music Thingy${BLUE}~ $:-) $(xfooter) "
+#print_bottom "${ORANGE}Interactive Music Thingy${BLUE}~ $:-) $(xfooter) "
+tput cup $(tput lines) 0
+echo -e "\\n\\n${ORANGE}Interactive Music Thingy${BLUE}~ $:-) $(xfooter) "
 }
 if [[ $REPLY == a ]];then
     if [[ -s $favs ]];then ## make sure favorits is not empty
@@ -507,54 +510,95 @@ if [[ -n $REPLY && ! $REPLY =~ [^[:alnum:][:space:]] && ! $REPLY =~ ^[0-9]$ ]];t
 
 
 
-
 while read -t 3 -u ${fd} info
 do
 
 if [[ $info == icy-title* ]];then
+[[ -e /tmp/music_thingy.title ]] && rm /tmp/music_thingy.title
 title="${info//icy-title:/}"
-echo -e "${BLUE}   *${title}"
+echo $title > /tmp/music_thingy.title
+#echo -e "${BLUE}   *${title}"
 
 fi
 
-done | pv -rN "
-$(printf '\033[H\033[2J') ${BLUE} 
-
- 		 Interactive Music Thingy
+done | pv -rN "$(printf '\033[H\033[2J')
 
 
 
-         Loading data, please wait..."
+	           Interactive Music Thingy
+	         https://github.com/ablyssx74
+	   [S]huffle/[Q]uit   Vol +/-   [H]elp Menu
 
 
-#while IFS= read -t 3 -r -u ${fd} info
-#do
-#echo $info
-#done
+		Loading data, please wait...
+
+
+
+
+
+$(
+echo -e "   * $streamtitle")
+   * Total Playlists ${#playlist[*]}
+   * $(vol)$(footer)"
 
 fi
+
+
+
+
+
+
+
+
+
+
+
+
 
 exec {fd}<&-
 
+[[ -e /tmp/music_thingy.title ]] && echo -e "   * $(</tmp/music_thingy.title)"
 
 echo -e "   * $streamtitle"
 echo -e "   * Total Playlists ${#playlist[*]}   "
 echo -e "${BLUE}${info}   * $(vol)"
 
-echo -e "\\n\\n\\n\\n\\n\\n\\n"
+#echo -e "\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n"
 footer "$@"
 
 }
 
 main() {
-tput -S <<!
+#tput -S <<!
 clear
-cup 10
-smso
-bold
+
+#smso
+#bold
 !
-printf "\033[30m\033[0m\n"
-echo -e "${BLUE}                   Interactive Music Thingy               \n                 https://github.com/ablyssx74                \n   \
+
+# Function to print text at the bottom of the terminal
+print_bottom() {
+    local text="$1"
+    # Get the number of lines in the terminal
+    local lines=$(tput lines)
+    # Save the current cursor position
+    tput sc
+    # Move the cursor to the bottom line (0 is the first column)
+    tput cup $lines 0
+    # Print the text using printf, without an automatic newline
+    printf "%s" "$text"
+    # Restore the cursor position to where it was before the function call
+    tput rc
+}
+
+#print_bottom
+
+
+
+
+
+printf "\033[30m\033[0m"
+echo -e "      \n       \n     \n   \n${BLUE}                   Interactive Music Thingy               \n                 https://github.com/ablyssx74                \n   \
         [S]huffle/[Q]uit   Vol +/-   [H]elp Menu       \n       \n     \n   \n \n"
 
 tput rmso
