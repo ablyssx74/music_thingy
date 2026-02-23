@@ -69,7 +69,8 @@ source $config
   		  [[ $REPLY == - ]] && setvolume -d > /dev/null
   		  [[ $REPLY == m ]] && setvolume -m > /dev/null
   		  [[ $REPLY == u ]] && setvolume -u > /dev/null
-  		  setvolume
+  		  echo -e "   * $(setvolume)"
+
 
 elif [[ ${OS_NAME} == linux ]]; then
 
