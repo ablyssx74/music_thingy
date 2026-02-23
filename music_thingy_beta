@@ -10,77 +10,47 @@ set -f
 shopt -s nocasematch
 
 OS_NAME=$(uname -s)
-if [[ ${OS_NAME} == haiku ]]; then
-		 notify="notify --title MusicThingy "
-		 ConfigDir=${HOME}/config/settings/music_thingy
-	     [[ ! -d $ConfigDir ]] && mkdir $ConfigDir
-		 [[ ! -e $ConfigDir/favorites ]] && touch $ConfigDir/favorites
-		 [[ ! -e $ConfigDir/config ]] && touch $ConfigDir/config
-		 favs="$ConfigDir/favorites"
-		 config="$ConfigDir/config"
-		 if [[ ! -s $config ]];then
-				declare -A _config=( [show_alerts]="\"1\"" [debug_disable_player]="\"0\"" [optionA]="\"0\"" )
-					for value in "${!_config[@]}"
-						do
-							echo "$value=${_config[$value]}" >> $config
-						done
-		 fi
+if [[ ! $config ]];then
+	if [[ ${OS_NAME} == haiku ]]; then
+			notify="notify --title MusicThingy "
+			ConfigDir=${HOME}/config/settings/music_thingy
+			[[ ! -d $ConfigDir ]] && mkdir $ConfigDir
+			[[ ! -e $ConfigDir/favorites ]] && touch $ConfigDir/favorites
+			[[ ! -e $ConfigDir/config ]] && touch $ConfigDir/config
+			favs="$ConfigDir/favorites"
+			config="$ConfigDir/config"
+			if [[ ! -s $config ]];then
+					declare -A _config=( [show_alerts]="\"1\"" [debug_disable_player]="\"0\"" [use_pactl_to_get_volume]="\"0\"" [optionA]="\"0\"")
+						for value in "${!_config[@]}"
+							do
+								echo "$value=${_config[$value]}" >> $config
+							done
+			fi
+	fi
+
+	if [[ ${OS_NAME} == linux ]]; then
+			notify="notify-send -a MusicThingy"
+			ConfigDir=${HOME}/.config/music_thingy
+			[[ ! -d $ConfigDir ]] && mkdir -p $ConfigDir
+			[[ ! -e $ConfigDir/favorites ]] && touch $ConfigDir/favorites
+			[[ ! -e $ConfigDir/config ]] && touch $ConfigDir/config
+			favs="$ConfigDir/favorites"
+			config="$ConfigDir/config"
+			if [[ ! -s $config ]];then
+					declare -A _config=( [show_alerts]="\"1\"" [debug_disable_player]="\"0\"" [use_pactl_to_get_volume]="\"1\"" [optionA]="\"0\"")
+						for value in "${!_config[@]}"
+							do
+								echo "$value=${_config[$value]}" >> $config
+							done
+			fi
+
+	fi
 fi
-
-if [[ ${OS_NAME} == linux ]]; then
-		 notify="notify-send -a MusicThingy"
-		 ConfigDir=${HOME}/.config/music_thingy
-	 	 [[ ! -d $ConfigDir ]] && mkdir -p $ConfigDir
-		 [[ ! -e $ConfigDir/favorites ]] && touch $ConfigDir/favorites
-		 [[ ! -e $ConfigDir/config ]] && touch $ConfigDir/config
-		 favs="$ConfigDir/favorites"
-		 config="$ConfigDir/config"
-		 if [[ ! -s $config ]];then
-				declare -A _config=( [show_alerts]="\"1\"" [debug_disable_player]="\"0\"" [optionA]="\"0\"" )
-					for value in "${!_config[@]}"
-						do
-							echo "$value=${_config[$value]}" >> $config
-						done
-		 fi
-
-fi
-
-
 
 source $config
-if [[ ! $_config ]];then
-	rm $config
-	declare -A _config=([show_alerts]="\"$show_alerts\"" [debug_disable_player]="\"$debug_disable_player\"" [optionA]="\"0\"" )
-		for value in "${!_config[@]}"
-			do
-				echo "$value=${_config[$value]}" >> $config
-			done
-	source $config
-fi
-
-if [[ ! $show_alerts ]];then
-	echo -e "show_alerts=0" > $config
-fi
-
-if [[ ! $debug_disable_player ]];then
-    echo -e "debug_disable_player=0" >> $config
-fi
-
-cleanup_thingy(){
-mapfile pids <<< $pids
-	if [[ ${#pids[*]} -gt 1 ]];then
-		pid0="${pids[0]}"
-		pid0=(${pid0})
-		kill -1 "${pid0[1]}"
-		pid1="${pids[1]}"
-		pid1=(${pid1})
-		kill -1 "${pid1[1]}"
-       fi
-}
 
 xcleanup_thingy(){
 echo
-#cleanup_thingy
 [[ -e /tmp/music_thingy.info ]] && mv /tmp/music_thingy.info /tmp/music_thingy.previous.info
 [[ -e /tmp/music_thingy.title ]] && rm /tmp/music_thingy.title
 [[ -e /tmp/music_thingy.pid ]] && kill -1 $(</tmp/music_thingy.pid) && rm /tmp/music_thingy.pid
@@ -89,6 +59,7 @@ echo
 
 
 vol() {
+source $config
 	  if [[ ${OS_NAME} == haiku ]]; then
   		  [[ $REPLY == + ]] && setvolume -i > /dev/null
   		  [[ $REPLY == - ]] && setvolume -d > /dev/null
@@ -97,6 +68,35 @@ vol() {
   		  setvolume
 
 elif [[ ${OS_NAME} == linux ]]; then
+
+	if [[ $use_pactl_to_get_volume == 1 ]];then
+
+  		  [[ -e /tmp/music_thingy.title ]] && foo="$(</tmp/music_thingy.title)"
+  		  foo="${foo[0]}"
+  		  foo2="$(pactl list sink-inputs | grep -B 25 "media.name = \"${foo} - mpv\"")"
+  		  mapfile x <<< "$foo2"
+  		  x="${x[0]}"
+  		  y="${x[10]}"
+  		  y=($y)
+  		  v="${y[4]}"
+  		  sinkID="${x//Sink\ Input\ \#/}"
+		  soundlevel=${v//%/}
+  		  inc_sound=$(($soundlevel + 1))
+  		  dec_sound=$(($soundlevel - 1))
+
+		  #echo -n $sinkID
+		  #echo "${y[4]}"
+
+  		  [[ $REPLY == + ]] && pactl set-sink-input-volume $sinkID $(($soundlevel + 1))% && s=$(($soundlevel + 1))%
+  		  [[ $REPLY == - ]] && pactl set-sink-input-volume $sinkID $(($soundlevel - 1))% && s=$(($soundlevel - 1))%
+
+  		  [[ -n $soundlevel ]] && echo -n "${BLUE}${info}   * Vol ${soundlevel}%"
+  		  [[ -z $soundlevel ]] && REPLY=r
+
+	fi
+
+	if [[ $use_pactl_to_get_volume == 0 ]];then
+
 	for l in "$(amixer get Master)"
 		do
 			 l=${l// /_}
@@ -104,7 +104,6 @@ elif [[ ${OS_NAME} == linux ]]; then
  		 	 l=${l/]_/ }
   		 	 l=($l)
   		 	 s="${l[6]}"
-
 
   		 		#Fix for raspberry pi *** maybe outdated
  		 		[[ ${#s} -gt 3 ]] && s="${l[6]}"
@@ -118,8 +117,9 @@ elif [[ ${OS_NAME} == linux ]]; then
   		  [[ $REPLY == m ]] && amixer -q set Master mute
   		  [[ $REPLY == u ]] && amixer -q set Master unmute
 		  [[ ${l[7]} == "[off]" ]] && s=Muted
-  		  echo "Vol ${s}"
+  		  echo -n "${BLUE}${info}   * Vol ${s}"
 	done
+	fi
 fi
 }
 
@@ -506,7 +506,7 @@ $(
 	echo -e "
    * $streamtitle")
    * Total Playlists ${#playlist[*]}
-   * $(vol)$(footer)Loading data, please wait..."
+$(vol)$(footer)Loading data, please wait..."
 	else  ## Haiku has a pv bug with pv -name over 40 chars so use this instead
 	echo "$(printf '\033[H\033[2J')
 	
@@ -546,7 +546,7 @@ exec {fd}<&-
   echo -e "   * Press \"s\" to start."
  fi
 echo -e "   * Total Playlists ${#playlist[*]}   "
-echo -e "${BLUE}${info}   * $(vol)"
+echo -e "$(vol)"
 
 
 footer "$@"
