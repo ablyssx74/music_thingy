@@ -320,9 +320,11 @@ while [[ $var -le $v ]]
 
 done
 
+if [[ -e tmp/music_thingy.info ]];then
 streamtitle="$(</tmp/music_thingy.info)"
 streamtitle="${streamtitle/\\n\ \*/\\n   *}"
 streamtitle="${streamtitle//\\n\ \*/,}"
+fi
 
 }
 xfooter(){
@@ -543,7 +545,7 @@ exec {fd}<&-
   echo -e "   * $(</tmp/music_thingy.title)"
   echo -e "   * $streamtitle"
   else
-  echo -e "   * Press \"s\" to start."
+  echo -e "   * Press \"s\" to start"
  fi
 echo -e "   * Total Playlists ${#playlist[*]}   "
 echo -e "$(vol)"
