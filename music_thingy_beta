@@ -442,6 +442,28 @@ if [[ $REPLY == p ]];then
 		echo ${url[*]} > /tmp/music_thingy.info
 		fi
 fi
+if [[ $REPLY == r ]];then
+		if [[ -s /tmp/music_thingy.info ]];then
+		mapfile refresh < /tmp/music_thingy.info
+		nu="0-$((${#refresh[*]}-1))"
+		shuffle="$(shuf -i $nu -n 1)"
+		pl="${refresh[$shuffle]}"
+		tr=(${pl//\\n/\/ })
+		tr=${tr[0]}
+		xcleanup_thingy
+       (echo $BASHPID > /tmp/music_thingy.pid
+       source $config
+       [[ $debug_disable_player == 1 ]] && return 0
+       exec -a music_thingy $player --quiet ${tr}) >&${fd} &
+
+
+        url="${pl//,/\\n *}"
+		url="${url//\ -\ /\\n * }"
+		url="${url//.\ /\\n * }"
+		url=(${url//#/\\n * })
+		echo ${url[*]} > /tmp/music_thingy.info
+		fi
+fi
 if [[ $REPLY == s ]];then
         nu="0-$((${#playlist[*]}-1))"
 		shuffle="$(shuf -i $nu -n 1)"
