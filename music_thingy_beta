@@ -81,6 +81,7 @@ mapfile pids <<< $pids
 xcleanup_thingy(){
 echo
 #cleanup_thingy
+[[ -e /tmp/music_thingy.info ]] && mv /tmp/music_thingy.info /tmp/music_thingy.previous.info
 [[ -e /tmp/music_thingy.title ]] && rm /tmp/music_thingy.title
 [[ -e /tmp/music_thingy.pid ]] && kill -1 $(</tmp/music_thingy.pid) && rm /tmp/music_thingy.pid
 
@@ -102,7 +103,8 @@ elif [[ ${OS_NAME} == linux ]]; then
  	         l=${l/_[/ }
  		 	 l=${l/]_/ }
   		 	 l=($l)
-  		 	 s="${l[5]}"
+  		 	 s="${l[6]}"
+
 
   		 		#Fix for raspberry pi *** maybe outdated
  		 		[[ ${#s} -gt 3 ]] && s="${l[6]}"
@@ -113,8 +115,9 @@ elif [[ ${OS_NAME} == linux ]]; then
 
   		  [[ $REPLY == + ]] && amixer -q set Master $(($soundlevel + 1))% && s=$(($soundlevel + 1))%
   		  [[ $REPLY == - ]] && amixer -q set Master $(($soundlevel - 1))% && s=$(($soundlevel - 1))%
-  		  [[ $REPLY == m ]] && amixer -q set Master mute && s=Muted
+  		  [[ $REPLY == m ]] && amixer -q set Master mute
   		  [[ $REPLY == u ]] && amixer -q set Master unmute
+		  [[ ${l[7]} == "[off]" ]] && s=Muted
   		  echo "Vol ${s}"
 	done
 fi
@@ -323,9 +326,9 @@ streamtitle="${streamtitle//\\n\ \*/,}"
 
 }
 xfooter(){
-	[[ $REPLY == f && -s $favs ]] && echo "${RED}Shuffling Favorites${BLUE} (-:"
+	#[[ $REPLY == f && -s $favs ]] && echo "${RED}Shuffling Favorites${BLUE} (-:"
 	[[ $REPLY == f && ! -s $favs ]] && echo "${RED}Favorites is empty. Press \"s\" then \"a\" to add to favorites.${BLUE} (-:"
-	[[ $REPLY == s ]] && echo "${RED}Shuffling All${BLUE} (-:"
+	#[[ $REPLY == s ]] && echo "${RED}Shuffling All${BLUE} (-:"
 	[[ $REPLY == a ]] && echo "${RED}Added to favorites. Press \"F\" to shuffle favorites. Press \"L\" to list playlist.${BLUE} (-:"
 	[[ $REPLY == d && -s $favs ]] && echo "${RED}Deleted from favorites. Press \"F\" to shuffle favorites. Press \"L\" to list playlist.${BLUE} (-:"
 	[[ $REPLY == d && ! -s $favs ]] && echo "${RED}Favorites is empty.${BLUE} (-:"
@@ -370,6 +373,7 @@ if [[ ${REPLY} == h ]];then
 	echo -e "${BLUE} * ${RED} [s]  Shuffle all"
 	echo -e "${BLUE} * ${RED} [q]  Quit"
 	echo -e "${BLUE} * ${RED} [m]  Mute"
+	echo -e "${BLUE} * ${RED} [p]  Previous stream"
 	echo -e "${BLUE} * ${RED} [u]  Unmute"
 	echo -e "${BLUE} * ${RED} [+]  Vol up"
 	echo -e "${BLUE} * ${RED} [-]  Vol down"
@@ -416,12 +420,12 @@ if [[ $REPLY == f ]];then
 		echo ${url[*]} > /tmp/music_thingy.info
 		fi
 fi
-if [[ $REPLY == r ]];then
-		if [[ -s /tmp/music_thingy.info ]];then
-		mapfile playlist < /tmp/music_thingy.info
-		nu="0-$((${#playlist[*]}-1))"
+if [[ $REPLY == p ]];then
+		if [[ -s /tmp/music_thingy.previous.info ]];then
+		mapfile previous < /tmp/music_thingy.previous.info
+		nu="0-$((${#previous[*]}-1))"
 		shuffle="$(shuf -i $nu -n 1)"
-		pl="${playlist[$shuffle]}"
+		pl="${previous[$shuffle]}"
 		tr=(${pl//\\n/\/ })
 		tr=${tr[0]}
 		xcleanup_thingy
@@ -472,17 +476,16 @@ echo "$(printf '\033[H\033[2J')
 	   [S]huffle/[Q]uit   Vol +/-   [H]elp Menu
 
 
-		Loading data, please wait...
-
 
 
 
 
 $(
-echo -e "   * $streamtitle")
+	echo -e "
+   * $streamtitle")
    * Total Playlists ${#playlist[*]}
-   * $(vol)$(footer)"
-	else
+   * $(vol)$(footer)Loading data, please wait..."
+	else  ## Haiku has a pv bug with pv -name over 40 chars so use this instead
 	echo "$(printf '\033[H\033[2J')
 	
 	           Interactive Music Thingy	
@@ -493,7 +496,7 @@ echo -e "   * $streamtitle")
    }
 
 
-if [[ -n $REPLY && ! $REPLY =~ [^[:alnum:][:space:]] && ! $REPLY =~ ^[0-9]$ ]];then
+if [[ -n $REPLY && ! $REPLY =~ [^[:alnum:][:space:]]  && ! $REPLY =~ ^[0-9]$ ]];then
 
 
 
@@ -514,9 +517,12 @@ fi
 
 exec {fd}<&-
 
-[[ -e /tmp/music_thingy.title ]] && echo -e "   * $(</tmp/music_thingy.title)"
-
-echo -e "   * $streamtitle"
+ if [[ -e /tmp/music_thingy.title ]];then
+  echo -e "   * $(</tmp/music_thingy.title)"
+  echo -e "   * $streamtitle"
+  else
+  echo -e "   * Press \"s\" to start."
+ fi
 echo -e "   * Total Playlists ${#playlist[*]}   "
 echo -e "${BLUE}${info}   * $(vol)"
 
