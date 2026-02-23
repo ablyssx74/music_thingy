@@ -9,9 +9,6 @@
 set -f
 shopt -s nocasematch
 [[ ! -d /tmp/music_thingy ]] && mkdir /tmp/music_thingy
-stitle=$(</tmp/music_thingy/music_thingy.title)
-sname=$(</tmp/music_thingy/music_thingy.name)
-sgenre=$(</tmp/music_thingy/music_thingy.genre)
 
 OS_NAME=$(uname -s)
 if [[ ! $config ]];then
