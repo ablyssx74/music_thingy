@@ -320,7 +320,7 @@ while [[ $var -le $v ]]
 
 done
 
-if [[ -e tmp/music_thingy.info ]];then
+if [[ -e /tmp/music_thingy.info ]];then
 streamtitle="$(</tmp/music_thingy.info)"
 streamtitle="${streamtitle/\\n\ \*/\\n   *}"
 streamtitle="${streamtitle//\\n\ \*/,}"
