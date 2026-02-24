@@ -131,23 +131,34 @@ fi
 ## Default playlist.
 ## Playlist is saved in $config directory and music_thingy must be restarted to read modified playlist.
 getplaylist() {
-	_curl="$(curl -s -H 'Accept: application/json' https://somafm.com/channels.json | jq  -rj '.. | select(.description? and .id? or .url?) | "_fid_ \(.id) _fdes_ \(.description) _furl_ \(.url)"')"
+	_curl="$(curl -s -H 'Accept: application/json' https://somafm.com/channels.json | jq  -rj '.. | select(.description? and .listeners and .id? or .url?) | "_listeners_=\(.listeners) _fid_ \(.id) _fdes_ \(.description) _furl_ \(.url)"')"
 	_curl="${_curl// _furl_ null_fid_ null _fdes_ null _furl_ /\\n}" 
 	_curl="${_curl//_fid_ null _fdes_ null _furl_ /\\n}"
+	_curl="${_curl//_listeners_=null/}"
+	_curl="${_curl//_furl_ null/}"		 
 	_curl="${_curl//_fid_ /\\n}"
-	_curl="${_curl// _fdes_ / - }"
+	_curl="${_curl// _fdes_ / - }" 
+	_curl="${_curl//_listeners_=/\\nlisteners=}"
 	ids="$(echo -en "${_curl}" | grep -e ' - ')" 
+	listeners="$(echo -en "${_curl}" | grep -e 'listeners=')" 
 	urls="$(echo -en "${_curl}" | grep -e '130.pls')"
-
-	mapfile id <<< $ids
+	
 	mapfile url <<< $urls
+	mapfile id <<< $ids
+	mapfile listener <<< $listeners
 	i=0
 	while [[ $i -le ${#id[@]} ]]
 		do
-			id_url="$(echo -en ${url[$i]}\#${id[$i]})"
+			#with listeners
+			#id_url="$(echo -en ${url[$i]}\#${id[$i]}\#${listener[$i]})"
+			#id_url="${id_url// #/#}"
+			#[[ ${id_url} =~ https ]] && echo -en "$id_url\\n"
+			
+			#without listeners	
+			id_url="$(echo -en ${url[$i]}\#${id[$i]}\ #${listener[$i]})"
 			id_url="${id_url// #/#}"
-		
 			[[ ${id_url} =~ https ]] && echo -en "$id_url\\n"
+
 			((i++))
 		done
 }
@@ -403,6 +414,8 @@ if [[ $REPLY == f ]];then
 			pl="${playlist[$shuffle]}"
 			tr=(${pl//\\n/ })
 			tr=${tr[0]}
+			listeners="${pl: -14}"
+			listeners="${listeners//[^0-9]/}"		
 			player_start
        		info_out
 		fi
@@ -415,6 +428,8 @@ if [[ $REPLY == p ]];then
 			pl="${previous[$shuffle]}"
 			tr=(${pl//\\n/ })
 			tr=${tr[0]}
+			listeners="${pl: -14}"
+			listeners="${listeners//[^0-9]/}"	
 			player_start
        		info_out
 	    fi
@@ -428,6 +443,8 @@ if [[ $REPLY == r ]];then
 			pl="${refresh[$shuffle]}"
 			tr=(${pl//\\n/ })
 			tr=${tr[0]}
+			listeners="${pl: -14}"
+			listeners="${listeners//[^0-9]/}"
 			player_start
 		fi
 fi
@@ -436,10 +453,11 @@ if [[ $REPLY == s ]];then
         nu="0-$((${#playlist[*]}-1))"
 		shuffle="$(shuf -i $nu -n 1)"
 		pl="${playlist[$shuffle]}"
-		tr=(${pl//#/ })
-		
-		tr=${tr[0]}
-
+		tr=(${pl//\\n/ })
+		tr=(${pl//#/ })		
+		tr=${tr[0]}		
+		listeners="${pl: -14}"
+		listeners="${listeners//[^0-9]/}"	
 		player_start
 fi
 
@@ -491,10 +509,11 @@ exec {fd}<&-
 [[ -e /tmp/music_thingy/music_thingy.title ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.title)"
 [[ -e /tmp/music_thingy/music_thingy.name  ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.name)"
 [[ -e /tmp/music_thingy/music_thingy.genre  ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.genre)"
+[[ $listeners  ]] &&  echo -e "   * Listeners: $listeners / Total Channels in Playlist: ${#playlist[*]}"
 
 [[ ! $REPLY ]] &&  echo -e "   * Press \"s\" to start"
 
-echo -e "   * Total Playlists ${#playlist[*]}   "
+#echo -e "   * Total Playlists ${#playlist[*]}   "
 echo -e "$(vol)"
 
 footer
@@ -508,7 +527,8 @@ main() {
 		url="${url//\ -\ /\\n * }"
 		url="${url//.\ /\\n * }"
 		url=(${url//#/\\n * })
-		echo ${url[*]} > /tmp/music_thingy/music_thingy.info
+		echo "${tr}" > /tmp/music_thingy/music_thingy.info
+		#echo ${url[*]} > /tmp/music_thingy/music_thingy.info
 	}
 	player_start() {
         cleanup
