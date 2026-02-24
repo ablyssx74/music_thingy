@@ -88,10 +88,6 @@ elif [[ ${OS_NAME} == linux ]]; then
   		  inc_sound=$(($soundlevel + 1))
   		  dec_sound=$(($soundlevel - 1))
 
-		  #echo -n $sinkID
-		  #echo "${y[4]}"
-		  #[[ $REPLY == + && -z $soundlevel ]] && REPLY=r
-		  #[[ $REPLY == - && -z $soundlevel ]] && REPLY=r
   		  [[ $REPLY == + ]] && pactl set-sink-input-volume $sinkID $(($soundlevel + 1))% && s=$(($soundlevel + 1))%
   		  [[ $REPLY == - ]] && pactl set-sink-input-volume $sinkID $(($soundlevel - 1))% && s=$(($soundlevel - 1))%
 
@@ -128,8 +124,6 @@ elif [[ ${OS_NAME} == linux ]]; then
 fi
 }
 
-## Default playlist.
-## Playlist is saved in $config directory and music_thingy must be restarted to read modified playlist.
 getplaylist() {
 	_curl="$(curl -s -H 'Accept: application/json' https://somafm.com/channels.json | jq  -rj '.. | select(.description? and .listeners and .id? or .url?) | "_listeners_=\(.listeners) _fid_ \(.id) _fdes_ \(.description) _furl_ \(.url)"')"
 	_curl="${_curl// _furl_ null_fid_ null _fdes_ null _furl_ /\\n}" 
@@ -149,16 +143,9 @@ getplaylist() {
 	i=0
 	while [[ $i -le ${#id[@]} ]]
 		do
-			#with listeners
-			#id_url="$(echo -en ${url[$i]}\#${id[$i]}\#${listener[$i]})"
-			#id_url="${id_url// #/#}"
-			#[[ ${id_url} =~ https ]] && echo -en "$id_url\\n"
-			
-			#without listeners	
 			id_url="$(echo -en ${url[$i]}\#${id[$i]}\ #${listener[$i]})"
 			id_url="${id_url// #/#}"
 			[[ ${id_url} =~ https ]] && echo -en "$id_url\\n"
-
 			((i++))
 		done
 }
@@ -166,19 +153,10 @@ getplaylist() {
 
 mapfile playlist <<< $(getplaylist)
 
-#if [[ ${OS_NAME} == haiku ]]; then
-#	 [[ ! -e $ConfigDir/playlist ]] && echo -n "${playlist[*]}" > $ConfigDir/playlist
-#	  playlist="$(< $ConfigDir/playlist)"
-
-#elif [[ ${OS_NAME} == linux ]]; then
-#	 [[ ! -e $ConfigDir/playlist ]] && echo -n "${playlist[*]}" > $ConfigDir/playlist
-#	  playlist="$(< $ConfigDir/playlist)"
-#fi
-
 
 # Added option to pass argument given to command line.
 # Arguments accepted are quit, shuffle, favorites, or custom stream URL
-# Works good for things like KDE-connect and keyboard shortcuts to play music_thingy in the backend.
+# Works great with keyboard shortcuts or KDE-connect to play music_thingy in the backend.
 # Examples "music_thingy https://ice2.somafm.com/secretagent-128-mp3" "music_thingy quit"  "music_thingy shuffle"  "music_thingy favorites"
 if [[ $1 ]];then
         if [[ ${1} != quit && ${1} != shuffle && ${1} != favorites && ${1} != del_favorite  && ${1} != add_favorite && ${1} != inc_vol && ${1} != dec_vol ]];then
@@ -257,7 +235,6 @@ Deleted from favorites."
 	fi
 fi
 
-
 startplaying(){
 
 header(){
@@ -329,17 +306,9 @@ fi
 
 }
 
-xfooter(){
-	#[[ $REPLY == f && -s $favs ]] && echo "${RED}Shuffling Favorites${BLUE} (-:"
-	[[ $REPLY == f && ! -s $favs ]] && echo "${RED}Favorites is empty. Press \"s\" then \"a\" to add to favorites.${BLUE} (-:"
-	#[[ $REPLY == s ]] && echo "${RED}Shuffling All${BLUE} (-:"
-	[[ $REPLY == a ]] && echo "${RED}Added to favorites. Press \"F\" to shuffle favorites. Press \"L\" to list playlist.${BLUE} (-:"
-	[[ $REPLY == d && -s $favs ]] && echo "${RED}Deleted from favorites. Press \"F\" to shuffle favorites. Press \"L\" to list playlist.${BLUE} (-:"
-	[[ $REPLY == d && ! -s $favs ]] && echo "${RED}Favorites is empty.${BLUE} (-:"
-}
 footer(){
 tput cup $(tput lines) 0
-echo -e "\\n${ORANGE}Interactive Music Thingy${BLUE}~ $:-) $(xfooter) "
+echo -e "\\n${ORANGE}Interactive Music Thingy${BLUE}~ $:-)"
 }
 if [[ $REPLY == a ]];then
     if [[ -s $favs ]];then ## make sure favorits is not empty
@@ -347,6 +316,7 @@ if [[ $REPLY == a ]];then
 		foo=$(<$favs)
 		echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
 	fi
+	shortmsg="Adding to Favorites, please wait"
 	fav=$(</tmp/music_thingy/music_thingy.info)
 	echo $fav >> $favs
 
@@ -360,6 +330,8 @@ fi
 if [[ $REPLY == d ]];then
 	tmp=$(</tmp/music_thingy/music_thingy.info)
 	foo=$(<$favs)
+	[[ ! -s $favs ]] && shortmsg="Favorites is empty."
+	[[ -s $favs ]] && shortmsg="Deleting Favorite, please wait"
 	echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
 fi
 
@@ -415,7 +387,8 @@ if [[ $REPLY == f ]];then
 			tr=(${pl//\\n/ })
 			tr=${tr[0]}
 			listeners="${pl: -14}"
-			listeners="${listeners//[^0-9]/}"		
+			listeners="${listeners//[^0-9]/}"	
+			shortmsg="Shuffling Favorites, please wait"	
 			player_start
        		info_out
 		fi
@@ -430,6 +403,7 @@ if [[ $REPLY == p ]];then
 			tr=${tr[0]}
 			listeners="${pl: -14}"
 			listeners="${listeners//[^0-9]/}"	
+			shortmsg="Loading Previous, please wait"
 			player_start
        		info_out
 	    fi
@@ -445,6 +419,7 @@ if [[ $REPLY == r ]];then
 			tr=${tr[0]}
 			listeners="${pl: -14}"
 			listeners="${listeners//[^0-9]/}"
+			shortmsg="Refreshing Playlist, please wait"
 			player_start
 		fi
 fi
@@ -457,7 +432,8 @@ if [[ $REPLY == s ]];then
 		tr=(${pl//#/ })		
 		tr=${tr[0]}		
 		listeners="${pl: -14}"
-		listeners="${listeners//[^0-9]/}"	
+		listeners="${listeners//[^0-9]/}"
+		shortmsg="Shuffling Playlist, please wait"
 		player_start
 fi
 
@@ -469,7 +445,7 @@ echo "$(printf '\033[H\033[2J')$(logo)
 
 
 
-$(tput cup 11 11)Loading data, please wait...
+$(tput cup 11 9)${shortmsg}
 $(footer)"
 
  }
@@ -482,26 +458,23 @@ if [[ -n $REPLY && ! $REPLY =~ [^[:alnum:][:space:]]  && ! $REPLY =~ ^[0-9]$ ]];
 			if [[ $info == icy-title* ]];then
 					[[ -e /tmp/music_thingy/music_thingy.title ]] && rm /tmp/music_thingy/music_thingy.title
 					title="${info//icy-title:/}"
-					echo $title > /tmp/music_thingy/music_thingy.title
-					#echo -e "${BLUE}   *${title}"
+					echo $title > /tmp/music_thingy/music_thingy.title					
 			fi
 
 			if [[ $info =~ icy-name: ]];then
 					[[ -e /tmp/music_thingy/music_thingy.name ]] && rm /tmp/music_thingy/music_thingy.name
 					name="${info/icy-name:/}"
-					echo $name > /tmp/music_thingy/music_thingy.name
-					#echo -e "${BLUE}   *${title}"
+					echo $name > /tmp/music_thingy/music_thingy.name				
 			fi
 
 			if [[ $info =~ icy-genre: ]];then
 					[[ -e /tmp/music_thingy/music_thingy.genre ]] && rm /tmp/music_thingy/music_thingy.genre
 					genre="${info/icy-genre:/}"
-					echo $genre > /tmp/music_thingy/music_thingy.genre
-					#echo -e "${BLUE}   *${title}"
+					echo $genre > /tmp/music_thingy/music_thingy.genre				
 			fi
 
 
-		done | pv -rN "$(msg)$(tput cup 10 39)" 
+		done | pv -rN "$(msg)$(tput cup 10 43)" 
 fi
 
 exec {fd}<&-
@@ -513,7 +486,6 @@ exec {fd}<&-
 
 [[ ! $REPLY ]] &&  echo -e "   * Press \"s\" to start"
 
-#echo -e "   * Total Playlists ${#playlist[*]}   "
 echo -e "$(vol)"
 
 footer
@@ -523,12 +495,7 @@ footer
 main() {
 
 	info_out() {
-        url="${pl//,/\\n *}"
-		url="${url//\ -\ /\\n * }"
-		url="${url//.\ /\\n * }"
-		url=(${url//#/\\n * })
 		echo "${tr}" > /tmp/music_thingy/music_thingy.info
-		#echo ${url[*]} > /tmp/music_thingy/music_thingy.info
 	}
 	player_start() {
         cleanup
