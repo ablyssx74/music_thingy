@@ -130,55 +130,40 @@ fi
 
 ## Default playlist.
 ## Playlist is saved in $config directory and music_thingy must be restarted to read modified playlist.
+getplaylist() {
+	_curl="$(curl -s -H 'Accept: application/json' https://somafm.com/channels.json | jq  -rj '.. | select(.description? and .id? or .url?) | "_fid_ \(.id) _fdes_ \(.description) _furl_ \(.url)"')"
+	_curl="${_curl// _furl_ null_fid_ null _fdes_ null _furl_ /\\n}" 
+	_curl="${_curl//_fid_ null _fdes_ null _furl_ /\\n}"
+	_curl="${_curl//_fid_ /\\n}"
+	_curl="${_curl// _fdes_ / - }"
+	ids="$(echo -en "${_curl}" | grep -e ' - ')" 
+	urls="$(echo -en "${_curl}" | grep -e '130.pls')"
 
-playlist="https://ice1.somafm.com/7soul-128-mp3#Seven Inch Soul - Vintage soul tracks from the original 45 RPM vinyl.
-https://ice4.somafm.com/beatblender-128-mp3#Beat Blender - A late night blend of deep-house and downtempo chill.
-https://ice4.somafm.com/bootliquor-128-mp3#Boot Liquor - Americana Roots music for Cowhands, Cowpokes and Cowtippers
-https://ice6.somafm.com/brfm-128-mp3#Black Rock FM - From the Playa to the world, for the annual Burning Man festival.
-https://ice6.somafm.com/cliqhop-128-mp3#cliqhop idm - Blips'n'beeps backed mostly w/beats. Intelligent Dance Music.
-https://ice4.somafm.com/covers-128-mp3#Covers - Just covers. Songs you know by artists you don't. We've got you covered.
-https://ice4.somafm.com/deepspaceone-128-mp3#Deep Space One - Deep ambient electronic, experimental and space music. For inner and outer space exploration.
-https://ice2.somafm.com/defcon-128-mp3#DEF CON Radio - Music for Hacking. The DEF CON Year-Round Channel.
-https://ice2.somafm.com/digitalis-128-mp3#Digitalis - Digitally affected analog rock to calm the agitated heart.
-https://ice2.somafm.com/dubstep-128-mp3#Dub Step Beyond - Dubstep, Dub and Deep Bass. May damage speakers at high volume.
-https://ice4.somafm.com/dronezone-128-mp3#Drone Zone - Served best chilled, safe with most medications. Atmospheric textures with minimal beats.
-https://ice6.somafm.com/fluid-128-mp3#Fluid - Drown in the electronic sound of instrumental hiphop, future soul and liquid trap.
-https://ice6.somafm.com/folkfwd-128-mp3#Folk Forward - Indie Folk, Alt-folk and the occasional folk classics.
-https://ice4.somafm.com/groovesalad-128-mp3#Groove Salad - A nicely chilled plate of ambient/downtempo beats and grooves.
-https://ice1.somafm.com/gsclassic-128-mp3#Groove Salad Classic - The classic (early 2000s) version of a nicely chilled plate of ambient/downtempo beats and grooves.
-https://ice2.somafm.com/illstreet-128-mp3#Illinois Street Lounge - Classic bachelor pad, playful exotica and vintage music of tomorrow.
-https://ice6.somafm.com/indiepop-128-mp3#Indie Pop Rocks! - New and classic favorite indie pop tracks.
-https://ice6.somafm.com/live-128-mp3#SomaFM Live - Special Live Events and rebroadcasts of past live events.
-https://ice6.somafm.com/lush-128-mp3#Lush - Sensuous and mellow female vocals, many with an electronic influence.
-https://ice1.somafm.com/metal-128-mp3#Metal Detector - From black to doom, prog to sludge, thrash to post, stoner to crossover, punk to industrial.
-https://ice4.somafm.com/missioncontrol-128-mp3#Mission Control - Celebrating NASA and Space Explorers everywhere.
-https://ice1.somafm.com/n5md-128-mp3#n5MD Radio Emotional Experiments in Music: Ambient, modern composition, post-rock, & experimental electronic music.
-https://ice6.somafm.com/poptron-128-mp3#PopTron - Electropop and indie dance rock with sparkle and pop.
-https://ice6.somafm.com/u80s-128-mp3#Underground 80s - Early 80s UK Synthpop and a bit of New Wave.
-https://ice4.somafm.com/reggae-128-mp3#Heavyweight Reggae - Reggae, Ska, Rocksteady classic and deep tracks.
-https://ice6.somafm.com/scanner-128-mp3#SF Police Scanner - San Francisco Public Safety Scanner Feed.
-https://ice2.somafm.com/secretagent-128-mp3#Secret Agent - The soundtrack for your stylish, mysterious, dangerous life. For Spies and PIs too!
-https://ice6.somafm.com/seventies-128-mp3#Left Coast 70s - Mellow album rock from the Seventies. Yacht not required.
-https://ice4.somafm.com/sf1033-128-mp3#SF 10-33 - Ambient music mixed with the sounds of San Francisco public safety radio traffic.
-https://ice6.somafm.com/sonicuniverse-128-mp3#Sonic Universe - Transcending the world of jazz with eclectic, avant-garde takes on tradition.
-https://ice1.somafm.com/spacestation-128-mp3#Space Station - Soma Tune in, turn on, space out. Spaced-out ambient and mid-tempo electronica.
-https://ice2.somafm.com/specials-128-mp3#Department Store Christmas Holiday Elevator Music from a more innocent time. (Specials).
-https://ice4.somafm.com/suburbsofgoa-128-mp3#Suburbs of Goa - Desi-influenced Asian world beats and beyond.
-https://ice1.somafm.com/synphaera-128-mp3#Synphaera Radio - Featuring the music from an independent record label focused on modern electronic ambient and space music.
-https://ice4.somafm.com/reggae-128-mp3#The Trip - Progressive house / trance. Tip top tunes.
-https://ice6.somafm.com/thistle-128-mp3#ThistleRadio - Exploring music from Celtic roots and branches
-https://ice1.somafm.com/vaporwaves-128-mp3#Vaporwaves - All Vaporwave. All the time."
+	mapfile id <<< $ids
+	mapfile url <<< $urls
+	i=0
+	while [[ $i -le ${#id[@]} ]]
+		do
+			id_url="$(echo -en ${url[$i]}\#${id[$i]})"
+			id_url="${id_url// #/#}"
+		
+			[[ ${id_url} =~ https ]] && echo -en "$id_url\\n"
+			((i++))
+		done
+}
 
-if [[ ${OS_NAME} == haiku ]]; then
-	 [[ ! -e $ConfigDir/playlist ]] && echo -n "${playlist[*]}" > $ConfigDir/playlist
-	  playlist="$(< $ConfigDir/playlist)"
 
-elif [[ ${OS_NAME} == linux ]]; then
-	 [[ ! -e $ConfigDir/playlist ]] && echo -n "${playlist[*]}" > $ConfigDir/playlist
-	  playlist="$(< $ConfigDir/playlist)"
-fi
+mapfile playlist <<< $(getplaylist)
 
-mapfile playlist <<< $playlist
+#if [[ ${OS_NAME} == haiku ]]; then
+#	 [[ ! -e $ConfigDir/playlist ]] && echo -n "${playlist[*]}" > $ConfigDir/playlist
+#	  playlist="$(< $ConfigDir/playlist)"
+
+#elif [[ ${OS_NAME} == linux ]]; then
+#	 [[ ! -e $ConfigDir/playlist ]] && echo -n "${playlist[*]}" > $ConfigDir/playlist
+#	  playlist="$(< $ConfigDir/playlist)"
+#fi
+
 
 # Added option to pass argument given to command line.
 # Arguments accepted are quit, shuffle, favorites, or custom stream URL
@@ -404,13 +389,19 @@ if [[ ${REPLY} == c ]];then
  return
 fi
 
+if [[ $REPLY == t ]];then
+
+getplaylist
+return
+fi
+
 if [[ $REPLY == f ]];then
 		 if [[ -s $favs ]];then
 			mapfile playlist < $favs
 			nu="0-$((${#playlist[*]}-1))"
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${playlist[$shuffle]}"
-			tr=(${pl//\\n/\/ })
+			tr=(${pl//\\n/ })
 			tr=${tr[0]}
 			player_start
        		info_out
@@ -422,7 +413,7 @@ if [[ $REPLY == p ]];then
 			nu="0-$((${#previous[*]}-1))"
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${previous[$shuffle]}"
-			tr=(${pl//\\n/\/ })
+			tr=(${pl//\\n/ })
 			tr=${tr[0]}
 			player_start
        		info_out
@@ -435,7 +426,7 @@ if [[ $REPLY == r ]];then
 			nu="0-$((${#refresh[*]}-1))"
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${refresh[$shuffle]}"
-			tr=(${pl//\\n/\/ })
+			tr=(${pl//\\n/ })
 			tr=${tr[0]}
 			player_start
 		fi
@@ -445,8 +436,10 @@ if [[ $REPLY == s ]];then
         nu="0-$((${#playlist[*]}-1))"
 		shuffle="$(shuf -i $nu -n 1)"
 		pl="${playlist[$shuffle]}"
-		tr=(${pl//#/\/ })
+		tr=(${pl//#/ })
+		
 		tr=${tr[0]}
+
 		player_start
 fi
 
@@ -525,7 +518,6 @@ main() {
         exec -a music_thingy $player --quiet --display-tags=\* ${tr}) >&${fd} &
 	    info_out
 	}
-
 
 tput -S <<!
 clear
