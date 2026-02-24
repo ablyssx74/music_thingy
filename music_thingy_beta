@@ -496,7 +496,6 @@ fi
 header "$@"
 
 msg() {
-if [[ ${OS_NAME} == linux ]]; then
 echo "$(printf '\033[H\033[2J')
 
 
@@ -508,15 +507,8 @@ echo "$(printf '\033[H\033[2J')
 
                  Loading data, please wait...
 $(footer)"
-	else  ## Haiku has a pv bug with pv -name over 40 chars so use this instead
-	echo "$(printf '\033[H\033[2J')
 
-	           Interactive Music Thingy
-
-
-	   Loading data, please wait..."
-	fi
-   }
+ }
 
 
 if [[ -n $REPLY && ! $REPLY =~ [^[:alnum:][:space:]]  && ! $REPLY =~ ^[0-9]$ ]];then
