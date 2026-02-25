@@ -330,10 +330,9 @@ if [[ $REPLY == a ]];then
 		foo=$(<$favs)
 		echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
 	fi
-	shortmsg="Adding to Favorites, please wait"
 	fav=$(</tmp/music_thingy/music_thingy.info)
 	echo $fav >> $favs
-	REPLY=r
+	REPLY=af
 
 fi
 if [[ $REPLY == l ]];then
@@ -343,12 +342,11 @@ if [[ $REPLY == l ]];then
 	return
 fi
 if [[ $REPLY == d ]];then
-	tmp=$(</tmp/music_thingy/music_thingy.info)
+	[[ -s /tmp/music_thingy/music_thingy.info ]] && tmp=$(</tmp/music_thingy/music_thingy.info)
 	foo=$(<$favs)
-	[[ ! -s $favs ]] && shortmsg="Favorites is empty."
-	[[ -s $favs ]] && shortmsg="Deleting Favorite, please wait"
-	echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
-	REPLY=r
+	[[ ! -s $favs ]] && REPLY=fe
+	[[ -s $favs ]] && REPLY=df && echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
+
 fi
 
 if [[ ${REPLY} == c ]];then
@@ -428,7 +426,7 @@ if [[ $REPLY == r ]];then
 		fi
 fi
 
-if [[ $REPLY == s ]];then
+if [[ $REPLY == *@(s|df|fe|af)*  ]];then
         nu="0-$((${#playlist[*]}-1))"
 		shuffle="$(shuf -i $nu -n 1)"
 		pl="${playlist[$shuffle]}"
@@ -438,6 +436,9 @@ if [[ $REPLY == s ]];then
 		listeners="${pl: -14}"
 		listeners="${listeners//[^0-9]/}"
 		shortmsg="Shuffling Playlist, please wait"
+		[[ $REPLY == df ]] && shortmsg="Deleted Favorite, refreshing"
+		[[ $REPLY == fe ]] && shortmsg="Favorites Empty."
+		[[ $REPLY == af ]] && shortmsg="Added Favorite, refreshing"	
 		player_start
 		info_out
 fi
