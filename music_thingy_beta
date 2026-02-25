@@ -329,10 +329,12 @@ if [[ $REPLY == a ]];then
 		tmp=$(</tmp/music_thingy/music_thingy.info) ### Repeat the delete cmds so no duplicate entries
 		foo=$(<$favs)
 		echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
+
 	fi
 	fav=$(</tmp/music_thingy/music_thingy.info)
 	echo $fav >> $favs
 	REPLY=af
+
 
 fi
 if [[ $REPLY == l ]];then
@@ -370,7 +372,10 @@ getplaylist
 return
 fi
 
-if [[ $REPLY == f ]];then
+if [[ $REPLY == *@(f|df|fe)* ]];then
+		 if [[ ! -s $favs ]];then
+		 shortmsg="Favorites Empty ::"
+		 fi
 		 if [[ -s $favs ]];then
 			mapfile playlist < $favs
 			nu="0-$((${#playlist[*]}-1))"
@@ -383,12 +388,13 @@ if [[ $REPLY == f ]];then
 			tr=${tr[0]}	
 			listeners="${tr: -14}"
 			listeners="${listeners//[^0-9]/}"	
-			shortmsg="Shuffling Favorites, please wait"	
+			shortmsg="Shuffling Favorites :: Please wait"
+			[[ $REPLY == df ]] && shortmsg="Deleted  ::  Refreshing Favorites"
 			player_start
        		info_out
 		fi
 fi
-if [[ $REPLY == p ]];then
+if [[ $REPLY == *@(p|af)* ]];then
 		if [[ -s /tmp/music_thingy/music_thingy.previous.info ]];then
 			mapfile previous < /tmp/music_thingy/music_thingy.previous.info
 			nu="0-$((${#previous[*]}-1))"
@@ -401,7 +407,9 @@ if [[ $REPLY == p ]];then
 			tr=${tr[0]}	
 			listeners="${tr: -14}"
 			listeners="${listeners//[^0-9]/}"	
-			shortmsg="Loading Previous, please wait"
+			shortmsg="Loading Previous - Please wait"
+			[[ $REPLY == af ]] && shortmsg="Added ::  Refreshing New Favorite"
+			#[[ $REPLY == sf ]] && shortmsg="Favorite Already Exist."
 			player_start
        		info_out
 	    fi
@@ -420,13 +428,13 @@ if [[ $REPLY == r ]];then
 			tr=${tr[0]}	
 			listeners="${tr: -14}"
 			listeners="${listeners//[^0-9]/}"
-			shortmsg="Refreshing Playlist, please wait"
+			shortmsg="Refreshing Playlist ::  Please wait"
 			player_start
 			info_out
 		fi
 fi
 
-if [[ $REPLY == *@(s|df|fe|af)*  ]];then
+if [[ $REPLY == *@(s)*  ]];then
         nu="0-$((${#playlist[*]}-1))"
 		shuffle="$(shuf -i $nu -n 1)"
 		pl="${playlist[$shuffle]}"
@@ -435,10 +443,7 @@ if [[ $REPLY == *@(s|df|fe|af)*  ]];then
 		tr=${tr[0]}		
 		listeners="${pl: -14}"
 		listeners="${listeners//[^0-9]/}"
-		shortmsg="Shuffling Playlist, please wait"
-		[[ $REPLY == df ]] && shortmsg="Deleted Favorite, refreshing"
-		[[ $REPLY == fe ]] && shortmsg="Favorites Empty."
-		[[ $REPLY == af ]] && shortmsg="Added Favorite, refreshing"	
+		shortmsg="Shuffling Playlist ::  Please wait"
 		player_start
 		info_out
 fi
@@ -451,7 +456,7 @@ echo "$(printf '\033[H\033[2J')$(logo)
 
 
 
-$(tput cup 11 9)${shortmsg}
+$(tput cup 11 8)${shortmsg}
 $(footer)"
 
  }
@@ -480,14 +485,14 @@ if [[ -n $REPLY && ! $REPLY =~ [^[:alnum:][:space:]]  && ! $REPLY =~ ^[0-9]$ ]];
 			fi
 
 
-		done | pv -rN "$(msg)$(tput cup 10 43)" 
+		done | pv -tN "$(msg)$(tput cup 10 43):"
 fi
 
 exec {fd}<&-
 
 [[ -e /tmp/music_thingy/music_thingy.title ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.title)"
 [[ -e /tmp/music_thingy/music_thingy.name  ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.name)"
-[[ -e /tmp/music_thingy/music_thingy.genre  ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.genre)"
+[[ -e /tmp/music_thingy/music_thingy.genre ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.genre)"
 [[ $listeners  ]] &&  echo -e "   * Listeners: $listeners / Channels in Playlist: ${#playlist[*]}"
 
 [[ ! $REPLY ]] &&  echo -e "   * Press \"s\" to start"
