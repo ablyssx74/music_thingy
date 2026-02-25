@@ -326,7 +326,8 @@ if [[ ${REPLY} == h ]];then
 	echo -e "${BLUE} * ${RED} [-] ${BLUE} Vol Down"
 	echo -e "${BLUE} * ${RED} [h] ${BLUE} Help Menu"
 	echo -e "${BLUE} * ${RED} [c] ${BLUE} Config Manager"
-	echo -e "${BLUE} * ${RED} [q] ${BLUE} Quit"
+	echo -e "${BLUE} * ${RED} [q] ${BLUE} Quit and log out of Music Thingy"
+	echo -e "${BLUE} * ${RED} [k] ${BLUE} Stop playing"
 	echo -e "${BLUE}  ${RED}</Help>${BLUE}"
 	footer
  return
@@ -359,7 +360,10 @@ if [[ $REPLY == d ]];then
 	REPLY=df
 
 fi
-
+if [[ $REPLY == k ]];then
+	cleanup
+	unset REPLY
+fi
 if [[ ${REPLY} == c ]];then
 	echo -e "  ${RED}<Config>\\n ${BLUE} * Press 0..9${RED}"
 	mapfile x <$ConfigDir/config
