@@ -294,22 +294,36 @@ while [[ $var -le $v ]]
 		fi
 
 		((var++))
-
-
 done
-
-if [[ -e /tmp/music_thingy/music_thingy.info ]];then
-streamtitle="$(</tmp/music_thingy/music_thingy.info)"
-streamtitle="${streamtitle/\\n\ \*/\\n   *}"
-streamtitle="${streamtitle//\\n\ \*/,}"
-fi
-
 }
 
 footer(){
 tput cup $(tput lines) 0
 echo -e "\\n${ORANGE}Interactive Music Thingy${BLUE}~ $:-)"
 }
+
+if [[ ${REPLY} == h ]];then
+	echo -e "${BLUE}  ${RED}<Help>"
+	echo -e "${BLUE} * ${RED} [s] ${BLUE} Shuffle All"
+	echo -e "${BLUE} * ${RED} [f] ${BLUE} Shuffle Favorites"
+	echo -e "${BLUE} * ${RED} [a] ${BLUE} Add Favorite"
+	echo -e "${BLUE} * ${RED} [d] ${BLUE} Delete Favorite"
+	echo -e "${BLUE} * ${RED} [p] ${BLUE} Previous Stream"
+	echo -e "${BLUE} * ${RED} [r] ${BLUE} Refresh Current Stream"
+	echo -e "${BLUE} * ${RED} [l] ${BLUE} List Favorites"
+	echo -e "${BLUE} * ${RED} [t] ${BLUE} Show Available Channels"
+	echo -e "${BLUE} * ${RED} [m] ${BLUE} Mute"
+	echo -e "${BLUE} * ${RED} [u] ${BLUE} Unmute"
+	echo -e "${BLUE} * ${RED} [+] ${BLUE} Vol Up"
+	echo -e "${BLUE} * ${RED} [-] ${BLUE} Vol Down"
+	echo -e "${BLUE} * ${RED} [h] ${BLUE} Help Menu"
+	echo -e "${BLUE} * ${RED} [c] ${BLUE} Config Manager"
+	echo -e "${BLUE} * ${RED} [q] ${BLUE} Quit"
+	echo -e "${BLUE}  ${RED}</Help>${BLUE}"
+	footer
+ return
+fi
+
 if [[ $REPLY == a ]];then
     if [[ -s $favs ]];then ## make sure favorits is not empty
 		tmp=$(</tmp/music_thingy/music_thingy.info) ### Repeat the delete cmds so no duplicate entries
@@ -319,6 +333,7 @@ if [[ $REPLY == a ]];then
 	shortmsg="Adding to Favorites, please wait"
 	fav=$(</tmp/music_thingy/music_thingy.info)
 	echo $fav >> $favs
+	REPLY=r
 
 fi
 if [[ $REPLY == l ]];then
@@ -333,27 +348,7 @@ if [[ $REPLY == d ]];then
 	[[ ! -s $favs ]] && shortmsg="Favorites is empty."
 	[[ -s $favs ]] && shortmsg="Deleting Favorite, please wait"
 	echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
-fi
-
-if [[ ${REPLY} == h ]];then
-	echo -e "${BLUE}  ${RED}<Help>"
-	echo -e "${BLUE} * ${RED} [a] ${BLUE} Add to favorites"
-	echo -e "${BLUE} * ${RED} [d] ${BLUE} Delete from favorites"
-	echo -e "${BLUE} * ${RED} [c] ${BLUE} Config Manager"
-	echo -e "${BLUE} * ${RED} [f] ${BLUE} Shuffle favorites"
-	echo -e "${BLUE} * ${RED} [l] ${BLUE} List favorites"
-	echo -e "${BLUE} * ${RED} [r] ${BLUE} Refresh current stream"
-	echo -e "${BLUE} * ${RED} [s] ${BLUE} Shuffle all"
-	echo -e "${BLUE} * ${RED} [q] ${BLUE} Quit"
-	echo -e "${BLUE} * ${RED} [m] ${BLUE} Mute"
-	echo -e "${BLUE} * ${RED} [p] ${BLUE} Previous stream"
-	echo -e "${BLUE} * ${RED} [u] ${BLUE} Unmute"
-	echo -e "${BLUE} * ${RED} [+] ${BLUE} Vol up"
-	echo -e "${BLUE} * ${RED} [-] ${BLUE} Vol down"
-	echo -e "${BLUE} * ${RED} [h] ${BLUE} Help menu"
-	echo -e "${BLUE}  ${RED}</Help>${BLUE}"
-	footer
- return
+	REPLY=r
 fi
 
 if [[ ${REPLY} == c ]];then
@@ -373,7 +368,6 @@ if [[ ${REPLY} == c ]];then
 fi
 
 if [[ $REPLY == t ]];then
-
 getplaylist
 return
 fi
@@ -384,9 +378,10 @@ if [[ $REPLY == f ]];then
 			nu="0-$((${#playlist[*]}-1))"
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${playlist[$shuffle]}"
-			tr=(${pl//\\n/ })
+			tr=(${pl})
 			tr=${tr[0]}
-			listeners="${pl: -14}"
+			tr="$(getplaylist | grep -e ${tr})"
+			listeners="${tr: -14}"
 			listeners="${listeners//[^0-9]/}"	
 			shortmsg="Shuffling Favorites, please wait"	
 			player_start
@@ -399,9 +394,10 @@ if [[ $REPLY == p ]];then
 			nu="0-$((${#previous[*]}-1))"
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${previous[$shuffle]}"
-			tr=(${pl//\\n/ })
+			tr=(${pl})
 			tr=${tr[0]}
-			listeners="${pl: -14}"
+			tr="$(getplaylist | grep -e ${tr})"
+			listeners="${tr: -14}"
 			listeners="${listeners//[^0-9]/}"	
 			shortmsg="Loading Previous, please wait"
 			player_start
@@ -415,12 +411,14 @@ if [[ $REPLY == r ]];then
 			nu="0-$((${#refresh[*]}-1))"
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${refresh[$shuffle]}"
-			tr=(${pl//\\n/ })
+			tr=(${pl})
 			tr=${tr[0]}
-			listeners="${pl: -14}"
+			tr="$(getplaylist | grep -e ${tr})"
+			listeners="${tr: -14}"
 			listeners="${listeners//[^0-9]/}"
 			shortmsg="Refreshing Playlist, please wait"
 			player_start
+			info_out
 		fi
 fi
 
@@ -428,13 +426,14 @@ if [[ $REPLY == s ]];then
         nu="0-$((${#playlist[*]}-1))"
 		shuffle="$(shuf -i $nu -n 1)"
 		pl="${playlist[$shuffle]}"
-		tr=(${pl//\\n/ })
+		tr=(${pl})
 		tr=(${pl//#/ })		
 		tr=${tr[0]}		
 		listeners="${pl: -14}"
 		listeners="${listeners//[^0-9]/}"
 		shortmsg="Shuffling Playlist, please wait"
 		player_start
+		info_out
 fi
 
 header
@@ -482,7 +481,7 @@ exec {fd}<&-
 [[ -e /tmp/music_thingy/music_thingy.title ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.title)"
 [[ -e /tmp/music_thingy/music_thingy.name  ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.name)"
 [[ -e /tmp/music_thingy/music_thingy.genre  ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.genre)"
-[[ $listeners  ]] &&  echo -e "   * Listeners: $listeners / Total Channels in Playlist: ${#playlist[*]}"
+[[ $listeners  ]] &&  echo -e "   * Listeners: $listeners / Channels in Playlist: ${#playlist[*]}"
 
 [[ ! $REPLY ]] &&  echo -e "   * Press \"s\" to start"
 
