@@ -21,7 +21,7 @@ if [[ ! $config ]];then
 			favs="$ConfigDir/favorites"
 			config="$ConfigDir/config"
 			if [[ ! -s $config ]];then
-					declare -A _config=( [notify_active]="\"1\"" [debug_disable_player]="\"0\"" [buffer_wait_time]="\"3\"" [test]="\"4\"" [show_all_meta_data]="\"0\"")
+					declare -A _config=( [notify_active]="\"1\"" [debug_disable_player]="\"0\"" [show_listeners]="\"1\"" [show_volume_levels]="\"1\"")
 						for value in "${!_config[@]}"
 							do
 								echo "$value=${_config[$value]}" >> $config
@@ -38,7 +38,7 @@ if [[ ! $config ]];then
 			favs="$ConfigDir/favorites"
 			config="$ConfigDir/config"
 			if [[ ! -s $config ]];then
-					declare -A _config=( [notify_active]="\"1\"" [debug_disable_player]="\"0\"" [buffer_wait_time]="\"3\"" [show_all_meta_data]="\"0\"" [use_pactl_to_get_volume]="\"1\"")
+					declare -A _config=( [notify_active]="\"1\"" [debug_disable_player]="\"0\"" [show_listeners]="\"1\"" [use_pactl_to_get_volume]="\"1\"" [show_volume_levels]="\"1\"")
 						for value in "${!_config[@]}"
 							do
 								echo "$value=${_config[$value]}" >> $config
@@ -51,7 +51,7 @@ fi
 source $config
 
 cleanup(){
-echo
+
 [[ -e /tmp/music_thingy/music_thingy.info      ]] && mv /tmp/music_thingy/music_thingy.info /tmp/music_thingy/music_thingy.previous.info
 [[ -e /tmp/music_thingy/music_thingy.title     ]] && rm /tmp/music_thingy/music_thingy.title
 [[ -e /tmp/music_thingy/music_thingy.name      ]] && rm /tmp/music_thingy/music_thingy.name
@@ -67,6 +67,9 @@ trap 'cleanup' EXIT
 
 vol() {
 source $config
+	  if [[ $show_volume_levels == 0 ]];then
+	  	  return
+	  fi
 	  if [[ ${OS_NAME} == haiku ]]; then
   		  [[ $REPLY == + ]] && setvolume -i > /dev/null
   		  [[ $REPLY == - ]] && setvolume -d > /dev/null
@@ -331,9 +334,9 @@ fi
 
 if [[ $REPLY == a ]];then
     if [[ -s $favs ]];then ## make sure favorits is not empty
-		tmp=$(</tmp/music_thingy/music_thingy.info) ### Repeat the delete cmds so no duplicate entries
+		tmpadd=$(</tmp/music_thingy/music_thingy.info) ### Repeat the delete cmds so no duplicate entries
 		foo=$(<$favs)
-		echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
+		echo "${foo//"$tmpadd"}" | sed '/^$/d' > $favs
 
 	fi
 	fav=$(</tmp/music_thingy/music_thingy.info)
@@ -349,10 +352,10 @@ if [[ $REPLY == l ]];then
 	return
 fi
 if [[ $REPLY == d ]];then
-	[[ -s /tmp/music_thingy/music_thingy.info ]] && tmp=$(</tmp/music_thingy/music_thingy.info)
+	[[ -s /tmp/music_thingy/music_thingy.info ]] && tmpdel=$(</tmp/music_thingy/music_thingy.info)
 	foo=$(<$favs)
 	[[ ! -s $favs ]] && REPLY=fe
-	[[ -s $favs ]] && REPLY=df && echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
+	[[ -s $favs ]] && REPLY=df && echo "${foo//"$tmpdel"}" | sed '/^$/d' > $favs
 	REPLY=df
 
 fi
@@ -364,7 +367,8 @@ if [[ ${REPLY} == c ]];then
 	    ii=$((${#x[*]} - 1))
 		while [[ $i -le $ii ]]
 		 do
-			echo -ne "${BLUE}  * ${RED}Status: ${BLUE}${x[$i]}"
+		    x=${x[$i]}
+			echo -ne "${BLUE}  * ${RED}Status: ${BLUE}${x//\"/}"
 			((i++))
 		done
 	echo -e "${RED}  </Config>${BLUE}"
@@ -386,17 +390,9 @@ if [[ $REPLY == df ]];then
 			nu="0-$((${#playlist[*]}-1))"
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${playlist[$shuffle]}"
-			tr=(${pl})
-			tr=${tr[0]}
-			tr="$(getplaylist | grep -e ${tr})"
-			tr=(${pl//#/ })		
-			tr=${tr[0]}	
-			listeners="${tr: -14}"
-			listeners="${listeners//[^0-9]/}"	
-			shortmsg="Shuffling Favorites :: Please wait"
-			[[ $REPLY == df ]] && shortmsg="Deleted  ::  Refreshing Favorites"
+			dofind
+			[[ $REPLY == df ]] && shortmsg="Refreshing Favorites"
 			player_start
-       		info_out
 		fi
 fi
 if [[ $REPLY == f ]];then
@@ -408,16 +404,9 @@ if [[ $REPLY == f ]];then
 			nu="0-$((${#playlist[*]}-1))"
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${playlist[$shuffle]}"
-			tr=(${pl})
-			tr=${tr[0]}
-			tr="$(getplaylist | grep -e ${tr})"
-			tr=(${pl//#/ })		
-			tr=${tr[0]}	
-			listeners="${tr: -14}"
-			listeners="${listeners//[^0-9]/}"	
-			shortmsg="Shuffling Favorites :: Please wait"
+			dofind			
+			shortmsg="Shuffling Favorites"
 			player_start
-       		info_out
 		fi
 fi
 if [[ $REPLY == af ]];then
@@ -426,17 +415,9 @@ if [[ $REPLY == af ]];then
 			nu="0-$((${#previous[*]}-1))"
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${previous[$shuffle]}"
-			tr=(${pl})
-			tr=${tr[0]}
-			tr="$(getplaylist | grep -e ${tr})"
-			tr=(${pl//#/ })		
-			tr=${tr[0]}	
-			listeners="${tr: -14}"
-			listeners="${listeners//[^0-9]/}"	
-			shortmsg="Loading Previous - Please wait"
-			[[ $REPLY == af ]] && shortmsg="Added ::  Refreshing New Favorite"
+			dofind
+			[[ $REPLY == af ]] && shortmsg="Refreshing New Favorite"
 			player_start
-       		info_out
 	    fi
 fi
 if [[ $REPLY == p ]];then
@@ -445,16 +426,9 @@ if [[ $REPLY == p ]];then
 			nu="0-$((${#previous[*]}-1))"
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${previous[$shuffle]}"
-			tr=(${pl})
-			tr=${tr[0]}
-			tr="$(getplaylist | grep -e ${tr})"
-			tr=(${pl//#/ })		
-			tr=${tr[0]}	
-			listeners="${tr: -14}"
-			listeners="${listeners//[^0-9]/}"	
-			shortmsg="Loading Previous - Please wait"
+			dofind
+			shortmsg="Loading Previous"
 			player_start
-       		info_out
 	    fi
 fi
 
@@ -464,16 +438,9 @@ if [[ $REPLY == r ]];then
 			nu="0-$((${#refresh[*]}-1))"
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${refresh[$shuffle]}"
-			tr=(${pl})
-			tr=${tr[0]}
-			tr="$(getplaylist | grep -e ${tr})"
-			tr=(${pl//#/ })		
-			tr=${tr[0]}	
-			listeners="${tr: -14}"
-			listeners="${listeners//[^0-9]/}"
-			shortmsg="Refreshing Playlist ::  Please wait"
+			dofind
+			shortmsg="Refreshing Playlist"
 			player_start
-			info_out
 		fi
 fi
 
@@ -481,29 +448,24 @@ if [[ $REPLY == s ]];then
         nu="0-$((${#playlist[*]}-1))"
 		shuffle="$(shuf -i $nu -n 1)"
 		pl="${playlist[$shuffle]}"
-		tr=(${pl})
-		tr=(${pl//#/ })		
-		tr=${tr[0]}		
-		listeners="${pl: -14}"
-		listeners="${listeners//[^0-9]/}"
-		[[ $listeners ]] && echo $listeners > /tmp/music_thingy/music_thingy.listeners
-		shortmsg="Shuffling Playlist ::  Please wait"
+		dofind
+		shortmsg="Shuffling Playlist"
 		player_start
-		info_out
 fi
 
 header
 
+
 msg() {
-
+[[ ! $shortmsg ]] && shortmsg="$(tput cup 11 8)$(fortune)"
 echo "$(printf '\033[H\033[2J')$(logo)
-
-
-
-$(tput cup 11 8)${shortmsg}
+$(tput cup 11 14)${shortmsg}
+$([[ $tr ]] && echo "$(tput cup 12 14)Gathering data for: ${tr}")
+$([[ $tr ]] && echo "$(tput cup 13 14)Please wait...")
+$([[ $tmpdel ]] && echo "$(tput cup 12 14)Deleted: ${tmpdel}")
+$([[ $tmpadd ]] && echo "$(tput cup 12 14)Added: ${tmpadd}")
 $(footer)"
-
- }
+}
 
 
 if [[ -n $REPLY && ! $REPLY =~ [^[:alnum:][:space:]]  && ! $REPLY =~ ^[0-9]$ ]];then
@@ -528,8 +490,9 @@ if [[ -n $REPLY && ! $REPLY =~ [^[:alnum:][:space:]]  && ! $REPLY =~ ^[0-9]$ ]];
 					echo $genre > /tmp/music_thingy/music_thingy.genre				
 			fi
 
-
-		done | pv -tN "$(msg)$(tput cup 10 43):"
+					# We really don't wont too see the pv data, just our custom msg 
+					# We try to hide it with tput 0 0
+		done | pv -N "$(msg)$(tput cup 0 0)" -F "%N"
 fi
 
 exec {fd}<&-
@@ -539,7 +502,7 @@ exec {fd}<&-
 [[ -e /tmp/music_thingy/music_thingy.title     ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.title)"
 [[ -e /tmp/music_thingy/music_thingy.name      ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.name)"
 [[ -e /tmp/music_thingy/music_thingy.genre 	   ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.genre)"
-[[ ! $listeners 							   ]] &&  listeners=$(</tmp/music_thingy/music_thingy.listeners)
+[[ ! $listeners && -e /tmp/music_thingy/music_thingy.pid ]] && listeners=$(</tmp/music_thingy/music_thingy.listeners)
 [[ $listeners								   ]] &&  echo -e "   * Listeners: $listeners"
 [[ ${#playlist[*]}							   ]] &&  echo -e "   * Channels in Playlist: ${#playlist[*]}"
 
@@ -555,16 +518,43 @@ footer
 main() {
 
 	info_out() {
-		echo "${tr}" > /tmp/music_thingy/music_thingy.info
-	}
+			echo "${tr}" > /tmp/music_thingy/music_thingy.info
+			 }
+			 
+	dofind() {			
+			#### Dofind
+			tr=(${pl})
+			tr=${tr[0]}
+			
+			# For getting listeners
+			if [[ $show_listeners == 1 ]];then
+				tr="$(getplaylist | grep -e ${tr})"
+				ltr=($tr)
+				listeners="${ltr[-1]}"
+				listeners=${listeners//#listeners=/}
+				[[ $listeners ]] && echo $listeners > /tmp/music_thingy/music_thingy.listeners
+			fi
+			if [[ $show_listeners == 0 && -e /tmp/music_thingy/music_thingy.listeners ]];then			
+			    rm /tmp/music_thingy/music_thingy.listeners			
+			fi
+			
+			# Reparse string as original info
+			tr=(${tr//#/ })	
+			tr=${tr[0]}	
+			
+ 
+
+			#### /Dofind
+			}
+			
 	player_start() {
-        cleanup
-        (echo $BASHPID > /tmp/music_thingy/music_thingy.pid
-        source $config
-        [[ $debug_disable_player == 1 ]] && return 0
-        exec -a music_thingy $player --quiet --display-tags=\* ${tr}) >&${fd} &
-	    info_out
-	}
+        	cleanup
+        	(echo $BASHPID > /tmp/music_thingy/music_thingy.pid
+        	source $config
+        	[[ $debug_disable_player == 1 ]] && return 0
+        	exec -a music_thingy $player --quiet --display-tags=\* ${tr}) >&${fd} &
+	    	info_out
+			}
 
 tput -S <<!
 clear
