@@ -353,6 +353,7 @@ if [[ $REPLY == d ]];then
 	foo=$(<$favs)
 	[[ ! -s $favs ]] && REPLY=fe
 	[[ -s $favs ]] && REPLY=df && echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
+	REPLY=df
 
 fi
 
@@ -376,8 +377,7 @@ if [[ $REPLY == t ]];then
 getplaylist
 return
 fi
-
-if [[ $REPLY == *@(f|df|fe)* ]];then
+if [[ $REPLY == df ]];then
 		 if [[ ! -s $favs ]];then
 		 shortmsg="Favorites Empty ::"
 		 fi
@@ -399,7 +399,28 @@ if [[ $REPLY == *@(f|df|fe)* ]];then
        		info_out
 		fi
 fi
-if [[ $REPLY == *@(p|af)* ]];then
+if [[ $REPLY == f ]];then
+		 if [[ ! -s $favs ]];then
+		 shortmsg="Favorites Empty ::"
+		 fi
+		 if [[ -s $favs ]];then
+			mapfile playlist < $favs
+			nu="0-$((${#playlist[*]}-1))"
+			shuffle="$(shuf -i $nu -n 1)"
+			pl="${playlist[$shuffle]}"
+			tr=(${pl})
+			tr=${tr[0]}
+			tr="$(getplaylist | grep -e ${tr})"
+			tr=(${pl//#/ })		
+			tr=${tr[0]}	
+			listeners="${tr: -14}"
+			listeners="${listeners//[^0-9]/}"	
+			shortmsg="Shuffling Favorites :: Please wait"
+			player_start
+       		info_out
+		fi
+fi
+if [[ $REPLY == af ]];then
 		if [[ -s /tmp/music_thingy/music_thingy.previous.info ]];then
 			mapfile previous < /tmp/music_thingy/music_thingy.previous.info
 			nu="0-$((${#previous[*]}-1))"
@@ -414,7 +435,24 @@ if [[ $REPLY == *@(p|af)* ]];then
 			listeners="${listeners//[^0-9]/}"	
 			shortmsg="Loading Previous - Please wait"
 			[[ $REPLY == af ]] && shortmsg="Added ::  Refreshing New Favorite"
-			#[[ $REPLY == sf ]] && shortmsg="Favorite Already Exist."
+			player_start
+       		info_out
+	    fi
+fi
+if [[ $REPLY == p ]];then
+		if [[ -s /tmp/music_thingy/music_thingy.previous.info ]];then
+			mapfile previous < /tmp/music_thingy/music_thingy.previous.info
+			nu="0-$((${#previous[*]}-1))"
+			shuffle="$(shuf -i $nu -n 1)"
+			pl="${previous[$shuffle]}"
+			tr=(${pl})
+			tr=${tr[0]}
+			tr="$(getplaylist | grep -e ${tr})"
+			tr=(${pl//#/ })		
+			tr=${tr[0]}	
+			listeners="${tr: -14}"
+			listeners="${listeners//[^0-9]/}"	
+			shortmsg="Loading Previous - Please wait"
 			player_start
        		info_out
 	    fi
@@ -439,7 +477,7 @@ if [[ $REPLY == r ]];then
 		fi
 fi
 
-if [[ $REPLY == *@(s)*  ]];then
+if [[ $REPLY == s ]];then
         nu="0-$((${#playlist[*]}-1))"
 		shuffle="$(shuf -i $nu -n 1)"
 		pl="${playlist[$shuffle]}"
