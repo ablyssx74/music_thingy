@@ -21,7 +21,7 @@ if [[ ! $config ]];then
 			favs="$ConfigDir/favorites"
 			config="$ConfigDir/config"
 			if [[ ! -s $config ]];then
-					declare -A _config=( [notify_active]="\"1\"" [show_listeners]="\"1\"" [show_volume_levels]="\"1\"")
+					declare -A _config=( [notify_active]="\"1\"" [show_listeners]="\"1\"" [show_volume_levels]="\"1\"" [show_channels]="\"1\"" [show_favorites]="\"1\"")
 						for value in "${!_config[@]}"
 							do
 								echo "$value=${_config[$value]}" >> $config
@@ -38,7 +38,7 @@ if [[ ! $config ]];then
 			favs="$ConfigDir/favorites"
 			config="$ConfigDir/config"
 			if [[ ! -s $config ]];then
-					declare -A _config=( [notify_active]="\"1\"" [show_listeners]="\"1\"" [use_pactl_to_get_volume]="\"1\"" [show_volume_levels]="\"1\"")
+					declare -A _config=( [notify_active]="\"1\"" [show_listeners]="\"1\"" [use_pactl_to_get_volume]="\"1\"" [show_channels]="\"1\"" [show_favorites]="\"1\"")
 						for value in "${!_config[@]}"
 							do
 								echo "$value=${_config[$value]}" >> $config
@@ -498,18 +498,18 @@ fi
 exec {fd}<&-
 
 
-
+source $config
 [[ -e /tmp/music_thingy/music_thingy.title     ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.title)"
 [[ -e /tmp/music_thingy/music_thingy.name      ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.name)"
 [[ -e /tmp/music_thingy/music_thingy.genre 	   ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.genre)"
-[[ ! $listeners && -e /tmp/music_thingy/music_thingy.pid ]] && listeners=$(</tmp/music_thingy/music_thingy.listeners)
-[[ $listeners								   ]] &&  echo -e "   * Listeners: $listeners"
-[[ ${#playlist[*]}							   ]] &&  echo -e "   * Channels in Playlist: ${#playlist[*]}"
+[[ $show_listeners == 1	&& ! $listeners && -e /tmp/music_thingy/music_thingy.pid ]] && listeners=$(</tmp/music_thingy/music_thingy.listeners)
+[[ $show_listeners == 1	&& $listeners    	   ]] &&  echo -e "   * Listeners: $listeners"
+[[ $show_channels == 1  					   ]] &&  echo -e "   * Channels: ${#playlist[*]}"
+[[ $show_favorites == 1 					   ]] &&  echo -e "   * Favorites: ${#fav[*]}"
+[[ $show_volume_levels == 1 				   ]] &&  echo -e "$(vol)"
 
-
-[[ ! $REPLY ]] &&  echo -e "   * Press \"s\" to start"
-
-echo -e "$(vol)"
+[[ ! $REPLY ]] &&  echo -e "   * Press \"s\" to start."
+[[ ! $REPLY ]] &&  echo -e "   * Press \"h\" for help."
 
 footer
 }
