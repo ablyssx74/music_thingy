@@ -52,10 +52,14 @@ source $config
 
 cleanup(){
 echo
-[[ -e /tmp/music_thingy/music_thingy.info ]] && mv /tmp/music_thingy/music_thingy.info /tmp/music_thingy/music_thingy.previous.info
-[[ -e /tmp/music_thingy/music_thingy.title ]] && rm /tmp/music_thingy/music_thingy.title
-[[ -e /tmp/music_thingy/music_thingy.name ]] && rm /tmp/music_thingy/music_thingy.name
-[[ -e /tmp/music_thingy/music_thingy.genre ]] && rm /tmp/music_thingy/music_thingy.genre
+[[ -e /tmp/music_thingy/music_thingy.info      ]] && mv /tmp/music_thingy/music_thingy.info /tmp/music_thingy/music_thingy.previous.info
+[[ -e /tmp/music_thingy/music_thingy.title     ]] && rm /tmp/music_thingy/music_thingy.title
+[[ -e /tmp/music_thingy/music_thingy.name      ]] && rm /tmp/music_thingy/music_thingy.name
+[[ -e /tmp/music_thingy/music_thingy.genre     ]] && rm /tmp/music_thingy/music_thingy.genre
+
+#[[ -e /tmp/music_thingy/music_thingy.previous.info    ]] && rm /tmp/music_thingy/music_thingy.previous.info
+#[[ -e /tmp/music_thingy/music_thingy.listeners ]] && rm /tmp/music_thingy/music_thingy.listeners
+
 [[ -e /tmp/music_thingy/music_thingy.pid ]] && kill -1 $(</tmp/music_thingy/music_thingy.pid) && rm /tmp/music_thingy/music_thingy.pid
 }
 
@@ -238,6 +242,7 @@ fi
 startplaying(){
 
 header(){
+
 mapfile x <$ConfigDir/config
 var=0
 v=$((${#x[*]} - 1))
@@ -443,6 +448,7 @@ if [[ $REPLY == *@(s)*  ]];then
 		tr=${tr[0]}		
 		listeners="${pl: -14}"
 		listeners="${listeners//[^0-9]/}"
+		[[ $listeners ]] && echo $listeners > /tmp/music_thingy/music_thingy.listeners
 		shortmsg="Shuffling Playlist ::  Please wait"
 		player_start
 		info_out
@@ -490,10 +496,15 @@ fi
 
 exec {fd}<&-
 
-[[ -e /tmp/music_thingy/music_thingy.title ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.title)"
-[[ -e /tmp/music_thingy/music_thingy.name  ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.name)"
-[[ -e /tmp/music_thingy/music_thingy.genre ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.genre)"
-[[ $listeners  ]] &&  echo -e "   * Listeners: $listeners / Channels in Playlist: ${#playlist[*]}"
+
+
+[[ -e /tmp/music_thingy/music_thingy.title     ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.title)"
+[[ -e /tmp/music_thingy/music_thingy.name      ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.name)"
+[[ -e /tmp/music_thingy/music_thingy.genre 	   ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.genre)"
+[[ ! $listeners 							   ]] &&  listeners=$(</tmp/music_thingy/music_thingy.listeners)
+[[ $listeners								   ]] &&  echo -e "   * Listeners: $listeners"
+[[ ${#playlist[*]}							   ]] &&  echo -e "   * Channels in Playlist: ${#playlist[*]}"
+
 
 [[ ! $REPLY ]] &&  echo -e "   * Press \"s\" to start"
 
