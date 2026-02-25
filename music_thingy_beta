@@ -381,6 +381,8 @@ if [[ $REPLY == f ]];then
 			tr=(${pl})
 			tr=${tr[0]}
 			tr="$(getplaylist | grep -e ${tr})"
+			tr=(${pl//#/ })		
+			tr=${tr[0]}	
 			listeners="${tr: -14}"
 			listeners="${listeners//[^0-9]/}"	
 			shortmsg="Shuffling Favorites, please wait"	
@@ -397,6 +399,8 @@ if [[ $REPLY == p ]];then
 			tr=(${pl})
 			tr=${tr[0]}
 			tr="$(getplaylist | grep -e ${tr})"
+			tr=(${pl//#/ })		
+			tr=${tr[0]}	
 			listeners="${tr: -14}"
 			listeners="${listeners//[^0-9]/}"	
 			shortmsg="Loading Previous, please wait"
@@ -414,6 +418,8 @@ if [[ $REPLY == r ]];then
 			tr=(${pl})
 			tr=${tr[0]}
 			tr="$(getplaylist | grep -e ${tr})"
+			tr=(${pl//#/ })		
+			tr=${tr[0]}	
 			listeners="${tr: -14}"
 			listeners="${listeners//[^0-9]/}"
 			shortmsg="Refreshing Playlist, please wait"
