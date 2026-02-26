@@ -58,8 +58,9 @@ cleanup(){
 [[ -e /tmp/music_thingy/music_thingy.name      ]] && rm /tmp/music_thingy/music_thingy.name
 [[ -e /tmp/music_thingy/music_thingy.genre     ]] && rm /tmp/music_thingy/music_thingy.genre
 
+## Required tmp files
 #[[ -e /tmp/music_thingy/music_thingy.previous.info    ]] && rm /tmp/music_thingy/music_thingy.previous.info
-#[[ -e /tmp/music_thingy/music_thingy.listeners ]] && rm /tmp/music_thingy/music_thingy.listeners
+#[[ -e /tmp/music_thingy/music_thingy.listeners 	   ]] && rm /tmp/music_thingy/music_thingy.listeners
 
 [[ -e /tmp/music_thingy/music_thingy.pid ]] && kill -1 $(</tmp/music_thingy/music_thingy.pid) && rm /tmp/music_thingy/music_thingy.pid
 }
@@ -157,6 +158,11 @@ getplaylist() {
 
 mapfile playlist <<< "$(getplaylist)"
 mapfile playlistfull <<< "${playlist[*]}"
+
+favoritesfull() {
+	mapfile fv < $favs
+	echo -en "${#fv[*]}"
+}
 
 # Added option to pass argument given to command line.
 # Will Notify User if notify is set to 1
@@ -334,7 +340,7 @@ if [[ ${REPLY} == h ]];then
 fi
 
 if [[ $REPLY == a ]];then
-    if [[ -s $favs ]];then ## make sure favorits is not empty
+    if [[ -s $favs ]];then ## make sure favorites is not empty
 		tmpadd=$(</tmp/music_thingy/music_thingy.info) ### Repeat the delete cmds so no duplicate entries
 		foo=$(<$favs)
 		addmsg="${foo//"$tmpadd"}"
@@ -400,7 +406,7 @@ if [[ $REPLY == df ]];then
 			nu="0-$((${#playlist[*]}-1))"
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${playlist[$shuffle]}"
-			dofind
+			findlisteners
 			[[ $REPLY == df ]] && shortmsg="Refreshing Favorites"
 			player_start
 		fi
@@ -415,7 +421,7 @@ if [[ $REPLY == f ]];then
 			nu="0-$((${#playlist[*]}-1))"
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${playlist[$shuffle]}"
-			dofind			
+			findlisteners			
 			shortmsg="Shuffling Favorites"
 			player_start
 		fi
@@ -427,7 +433,7 @@ if [[ $REPLY == af ]];then
 			nu="0-$((${#refresh[*]}-1))"
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${refresh[$shuffle]}"
-			dofind
+			findlisteners
 			[[ $REPLY == af ]] && shortmsg="Refreshing New Favorite"
 			player_start
 	    fi
@@ -439,7 +445,7 @@ if [[ $REPLY == p ]];then
 			nu="0-$((${#previous[*]}-1))"
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${previous[$shuffle]}"
-			dofind
+			findlisteners
 			shortmsg="Loading Previous"
 			player_start
 	    fi
@@ -451,7 +457,7 @@ if [[ $REPLY == r ]];then
 			nu="0-$((${#refresh[*]}-1))"
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${refresh[$shuffle]}"
-			dofind
+			findlisteners
 			shortmsg="Refreshing Playlist"
 			player_start
 		fi
@@ -461,7 +467,7 @@ if [[ $REPLY == s ]];then
         nu="0-$((${#playlist[*]}-1))"
 		shuffle="$(shuf -i $nu -n 1)"
 		pl="${playlist[$shuffle]}"
-		dofind
+		findlisteners
 		shortmsg="Shuffling Playlist"
 		player_start
 fi
@@ -469,6 +475,8 @@ fi
 QUERYS
 
 dofortune() {
+    # Added a tput function for fortune
+    # This helps message, albeit a rather quick one display nicely. 
 	mapfile df <<< $(fortune)
 	i=0
 	c=11
@@ -499,19 +507,24 @@ if [[ -n $REPLY && ! $REPLY =~ [^[:alnum:][:space:]]  && ! $REPLY =~ ^[0-9]$ ]];
 			if [[ $info == icy-title* ]];then
 					[[ -e /tmp/music_thingy/music_thingy.title ]] && rm /tmp/music_thingy/music_thingy.title
 					title="${info//icy-title:/}"
-					echo $title > /tmp/music_thingy/music_thingy.title					
+					# Echoing to tmp is needed here because the var won't be set after the file descriptor is read.
+					# You can test this by enabling the echo and changing the volume with +/- keys
+					echo $title > /tmp/music_thingy/music_thingy.title	
+					#disabled echo -e "   *${title}"				
 			fi
 
 			if [[ $info =~ icy-name: ]];then
 					[[ -e /tmp/music_thingy/music_thingy.name ]] && rm /tmp/music_thingy/music_thingy.name
 					name="${info/icy-name:/}"
-					echo $name > /tmp/music_thingy/music_thingy.name				
+					echo $name > /tmp/music_thingy/music_thingy.name
+					#disabled echo -e "   *${name}"				
 			fi
 
 			if [[ $info =~ icy-genre: ]];then
 					[[ -e /tmp/music_thingy/music_thingy.genre ]] && rm /tmp/music_thingy/music_thingy.genre
 					genre="${info/icy-genre:/}"
-					echo $genre > /tmp/music_thingy/music_thingy.genre				
+					echo $genre > /tmp/music_thingy/music_thingy.genre
+					#disabledecho -e "   *${genre}"				
 			fi
 
 					# We really don't wont too see the pv data, just our custom msg 
@@ -519,11 +532,10 @@ if [[ -n $REPLY && ! $REPLY =~ [^[:alnum:][:space:]]  && ! $REPLY =~ ^[0-9]$ ]];
 		done | pv -N "$(msg)$(tput cup 0 0)" -F "%N"
 fi
 
-exec {fd}<&-
-
-
-
-source $config
+    # close the file descriptor
+	exec {fd}<&-
+    # source config again
+	source $config
 
 [[ -e /tmp/music_thingy/music_thingy.title     ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.title)"
 [[ -e /tmp/music_thingy/music_thingy.name      ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.name)"
@@ -531,7 +543,7 @@ source $config
 [[ $show_listeners == 1	&& ! $listeners && -e /tmp/music_thingy/music_thingy.pid  && -e /tmp/music_thingy/music_thingy.listeners ]] && listeners=$(</tmp/music_thingy/music_thingy.listeners)
 [[ $show_listeners == 1	&& $listeners    	   ]] &&  echo -e "   * Listeners: $listeners"
 [[ $show_channels == 1  					   ]] &&  echo -e "   * Channels: ${#playlistfull[*]}"
-[[ $show_favorites == 1 					   ]] &&  echo -e "   * Favorites: ${#favs[*]}"
+[[ $show_favorites == 1 					   ]] &&  echo -e "   * Favorites: $(favoritesfull)"
 [[ $show_volume_levels == 1 				   ]] &&  echo -e "$(vol)"
 
 [[ ! $REPLY ]] &&  echo -e "   * Press \"s\" to start."
@@ -543,43 +555,35 @@ footer
 
 main() {
 
-	info_out() {
-		[[ ${tr} ]] && echo -en "${tr}" > /tmp/music_thingy/music_thingy.info
-			 }
-			 
-	dofind() {	
-			
-			#### Dofind
-			#echo "${pl##* }"
-			tr=(${pl})
-			tr=${tr[0]}
-			
-			# For getting listeners
-			#foo="${playlistfull[0]}"
-			#foo=($foo)
-			#echo "${foo[*]%% *}"
-			
-			if [[ $show_listeners == 1 ]];then
-				tr="$(getplaylist | grep -e ${tr})"
-				ltr=($tr)
-				listeners="${ltr[-1]}"
-				#listeners="${pl##* }"
-				listeners=${listeners//#listeners=/}
-				[[ $listeners ]] && echo $listeners > /tmp/music_thingy/music_thingy.listeners
+	findlisteners() {				
+			#### findlisteners
+			# For displaying listeners		
+			if [[ $show_listeners == 1 ]];then	
+				i=0
+					while [[ $i -le ${#playlistfull[*]} ]]
+						do	
+							#Find listeners in the playlistfull array by matching it with the requested stream "$tr" variable.		 
+				 			[[ "${playlistfull[$i]}" == *"${tr}"* ]] && listeners=${playlistfull[$i]##* } &&  listeners=${listeners//#listeners=/} 			 
+			     			((i++))			
+						done
+				#Get rid of trailing line from the loop.					
+				listeners=$(echo -en ${listeners})
+				
+				#Echo a "static" listener var to file because listeners var is empty when changing volume
+				[[ $listeners ]] && echo -e "$listeners" > /tmp/music_thingy/music_thingy.listeners
 			fi
+				
 			if [[ $show_listeners == 0 && -e /tmp/music_thingy/music_thingy.listeners ]];then			
 			    rm /tmp/music_thingy/music_thingy.listeners			
 			fi
-			
-			
-			# Reparse string as original info
-			tr=(${tr//#/ })	
-			tr=${tr[0]}	
-
-			#### /Dofind
+			#### /findlisteners
 			}
 			
 	player_start() {
+				
+    		# Using the "#" to break the string so the 1st element in the array will just be the url
+			tr=(${pl//#/ })	
+			
         	cleanup
         	(echo $BASHPID > /tmp/music_thingy/music_thingy.pid
         	source $config
@@ -588,34 +592,43 @@ main() {
 	    	info_out
 			}
 
-tput -S <<!
-clear
-civis
-!
+	info_out() {
+			# Some variables won't be set because the player creates them
+			# So for things like refresh, previous, add / del a tmp file works great.
+			[[ ${tr} ]] && echo -en "${tr}" > /tmp/music_thingy/music_thingy.info
+			 }
+			 
+			 
+	#Clear the terminal			 
+	tput clear
 
+	# Make the terminal black
+	printf "\033[30m\033[0m"
 
-printf "\033[30m\033[0m"
-logo() {
-echo "$(tput cup 5 19)${BLUE}Interactive Music Thingy"
-echo "$(tput cup 6 17)${BLUE}https://github.com/ablyssx74"
-echo "$(tput cup 7 11)${BLUE}[S]huffle/[Q]uit   Vol +/-   [H]elp Menu"
+	# Create logo and use tput to set the dimensions
+	logo() {
+		echo "$(tput cup 5 19)${BLUE}Interactive Music Thingy"
+		echo "$(tput cup 6 17)${BLUE}https://github.com/ablyssx74"
+		echo "$(tput cup 7 11)${BLUE}[S]huffle/[Q]uit   Vol +/-   [H]elp Menu"
+	}
+
+	logo
+
+	## Make a tmp file descriptor Thanks chatgpt!
+	data=$(mktemp -u)
+	mkfifo "$data"
+	exec {fd}<>"$data"
+	rm $data
+
+	# Set the body location with tput
+	echo "$(tput cup 10 0)${BLUE}"
+
+	body
 }
-
-logo
-
-
-data=$(mktemp -u)
-mkfifo "$data"
-exec {fd}<>"$data"
-rm $data
-
-echo "$(tput cup 10 0)${BLUE}"
-
-body
-}
-
-while true
-	do
+	# Create while loop for the main function
+	# Also set some tput colors and check if mpv and pv are installed for the script to work correctly
+	while true
+		do
 		 player="mpv"
 		 BLUE="$(tput setaf 12)"
 		 RED="$(tput setaf 9)"
@@ -642,11 +655,11 @@ while true
 
 		if [[ ${REPLY} == q ]];then
 			    tput cup $(tput lines) 0
-				echo -e "${ORANGE}Interactive Music Thingy${BLUE}~ $:-) Logging out! "
+				echo -e "${ORANGE}Interactive Music Thingy${BLUE}~ $:-) Logging out!"
 		 	    cleanup
 		        break
 		  else
+		  	 # This doesn't seem to be syntactically correct or a popular way to read a command but works none-the-less
 		  	 read -s -p "$(main)" -n 1
-
 		fi
 	done
