@@ -9,104 +9,105 @@
 set -f
 shopt -s nocasematch
 [[ ! -d /tmp/music_thingy ]] && mkdir /tmp/music_thingy
-OS_NAME="$(uname -s)"
+OS_NAME=$(uname -s)
 
 if [[ ! $config ]];then
-	if [[ "${OS_NAME}" == haiku ]]; then
+	if [[ ${OS_NAME} == haiku ]]; then
 			notify="notify --title MusicThingy "
-			ConfigDir="${HOME}/config/settings/music_thingy"
-			[[ ! -d "$ConfigDir" ]] && mkdir "$ConfigDir"
-			[[ ! -e "$ConfigDir/favorites" ]] && touch "$ConfigDir/favorites"
-			[[ ! -e "$ConfigDir/config" ]] && touch "$ConfigDir/config"
+			ConfigDir=${HOME}/config/settings/music_thingy
+			[[ ! -d $ConfigDir ]] && mkdir $ConfigDir
+			[[ ! -e $ConfigDir/favorites ]] && touch $ConfigDir/favorites
+			[[ ! -e $ConfigDir/config ]] && touch $ConfigDir/config
 			favs="$ConfigDir/favorites"
 			config="$ConfigDir/config"
-			if [[ ! -s "$config" ]];then
+			if [[ ! -s $config ]];then
 					declare -A _config=( [notify_active]="\"1\"" [show_listeners]="\"1\"" [show_volume_levels]="\"1\"" [show_channels]="\"1\"" [show_favorites]="\"1\"")
 						for value in "${!_config[@]}"
 							do
-								echo "$value=${_config[$value]}" >> "$config"
+								echo "$value=${_config[$value]}" >> $config
 							done
 			fi
 	fi
 
-	if [[ "${OS_NAME}" == linux ]]; then
+	if [[ ${OS_NAME} == linux ]]; then
 			notify="notify-send -a MusicThingy"
-			ConfigDir="${HOME}/.config/music_thingy"
-			[[ ! -d "$ConfigDir" ]] && mkdir -p "$ConfigDir"
-			[[ ! -e "$ConfigDir/favorites" ]] && touch "$ConfigDir/favorites"
-			[[ ! -e "$ConfigDir/config" ]] && touch "$ConfigDir/config"
+			ConfigDir=${HOME}/.config/music_thingy
+			[[ ! -d $ConfigDir ]] && mkdir -p $ConfigDir
+			[[ ! -e $ConfigDir/favorites ]] && touch $ConfigDir/favorites
+			[[ ! -e $ConfigDir/config ]] && touch $ConfigDir/config
 			favs="$ConfigDir/favorites"
 			config="$ConfigDir/config"
-			if [[ ! -s "$config" ]];then
+			if [[ ! -s $config ]];then
 					declare -A _config=( [notify_active]="\"1\"" [show_listeners]="\"1\"" [use_pactl_to_get_volume]="\"1\"" [show_channels]="\"1\"" [show_favorites]="\"1\"")
 						for value in "${!_config[@]}"
 							do
-								echo "$value=${_config[$value]}" >> "$config"
+								echo "$value=${_config[$value]}" >> $config
 							done
 			fi
 
 	fi
 fi
 
-source "$config"
+source $config
+
 
 cleanup(){
 
-[[ -e "/tmp/music_thingy/music_thingy.info"      ]] && mv /tmp/music_thingy/music_thingy.info /tmp/music_thingy/music_thingy.previous.info
-[[ -e "/tmp/music_thingy/music_thingy.title"     ]] && rm /tmp/music_thingy/music_thingy.title
-[[ -e "/tmp/music_thingy/music_thingy.name"      ]] && rm /tmp/music_thingy/music_thingy.name
-[[ -e "/tmp/music_thingy/music_thingy.genre"     ]] && rm /tmp/music_thingy/music_thingy.genre
+[[ -e /tmp/music_thingy/music_thingy.info      ]] && mv /tmp/music_thingy/music_thingy.info /tmp/music_thingy/music_thingy.previous.info
+[[ -e /tmp/music_thingy/music_thingy.title     ]] && rm /tmp/music_thingy/music_thingy.title
+[[ -e /tmp/music_thingy/music_thingy.name      ]] && rm /tmp/music_thingy/music_thingy.name
+[[ -e /tmp/music_thingy/music_thingy.genre     ]] && rm /tmp/music_thingy/music_thingy.genre
 
 ## Required tmp files
 #[[ -e /tmp/music_thingy/music_thingy.previous.info    ]] && rm /tmp/music_thingy/music_thingy.previous.info
 #[[ -e /tmp/music_thingy/music_thingy.listeners 	   ]] && rm /tmp/music_thingy/music_thingy.listeners
 
-[[ -e "/tmp/music_thingy/music_thingy.pid" ]] && kill -1 $(</tmp/music_thingy/music_thingy.pid) && rm /tmp/music_thingy/music_thingy.pid
+[[ -e /tmp/music_thingy/music_thingy.pid ]] && kill -1 $(</tmp/music_thingy/music_thingy.pid) && rm /tmp/music_thingy/music_thingy.pid
 }
 
 trap 'cleanup' EXIT
 
 vol() {
-source "$config"
-	  if [[ "$show_volume_levels" == 0 ]];then
+source $config
+	  if [[ $show_volume_levels == 0 ]];then
 	  	  return
 	  fi
-	  if [[ "${OS_NAME}" == haiku ]]; then
-  		  [[ "$REPLY" == + ]] && setvolume -i > /dev/null
-  		  [[ "$REPLY" == - ]] && setvolume -d > /dev/null
-  		  [[ "$REPLY" == m ]] && setvolume -m > /dev/null
-  		  [[ "$REPLY" == u ]] && setvolume -u > /dev/null
+	  if [[ ${OS_NAME} == haiku ]]; then
+  		  [[ $REPLY == + ]] && setvolume -i > /dev/null
+  		  [[ $REPLY == - ]] && setvolume -d > /dev/null
+  		  [[ $REPLY == m ]] && setvolume -m > /dev/null
+  		  [[ $REPLY == u ]] && setvolume -u > /dev/null
   		  echo -e "   * $(setvolume)"
 
 
-elif [[ "${OS_NAME}" == linux ]]; then
+elif [[ ${OS_NAME} == linux ]]; then
 
-	if [[ "$use_pactl_to_get_volume" == 1 ]];then
+	if [[ $use_pactl_to_get_volume == 1 ]];then
 
-  		  [[ -e "/tmp/music_thingy/music_thingy.title" ]] && foo="$(</tmp/music_thingy/music_thingy.title)"
+  		  [[ -e /tmp/music_thingy/music_thingy.title ]] && foo="$(</tmp/music_thingy/music_thingy.title)"
   		  foo="${foo[0]}"
-  		  foo2=$(pactl list sink-inputs | grep -B 25 "media.name = \"${foo} - mpv\"")
+  		  foo2="$(pactl list sink-inputs | grep -B 25 "media.name = \"${foo} - mpv\"")"
   		  mapfile x <<< "$foo2"
   		  x="${x[0]}"
   		  y="${x[10]}"
   		  y=($y)
   		  v="${y[4]}"
   		  sinkID="${x//Sink\ Input\ \#/}"
-		  soundlevel="${v//%/}"
+		  soundlevel=${v//%/}
   		  inc_sound=$(($soundlevel + 1))
   		  dec_sound=$(($soundlevel - 1))
 
-  		  [[ "$REPLY" == + ]] && pactl set-sink-input-volume $sinkID $(($soundlevel + 1))% && s=$(($soundlevel + 1))%
-  		  [[ "$REPLY" == - ]] && pactl set-sink-input-volume $sinkID $(($soundlevel - 1))% && s=$(($soundlevel - 1))%
+  		  [[ $REPLY == + ]] && pactl set-sink-input-volume $sinkID $(($soundlevel + 1))% && s=$(($soundlevel + 1))%
+  		  [[ $REPLY == - ]] && pactl set-sink-input-volume $sinkID $(($soundlevel - 1))% && s=$(($soundlevel - 1))%
 
-  		  [[ -n "$soundlevel" ]] && echo -n "${BLUE}${info}   * Vol ${soundlevel}%"
+  		  [[ -n $soundlevel ]] && echo -n "${BLUE}${info}   * Vol ${soundlevel}%"
 
 
 	fi
 
-	if [[ "$use_pactl_to_get_volume" == 0 ]];then
+	if [[ $use_pactl_to_get_volume == 0 ]];then
 
-	for l in $(amixer get Master)
+	for l in "$(amixer get Master)"
 		do
 			 l=${l// /_}
  	         l=${l/_[/ }
@@ -115,7 +116,7 @@ elif [[ "${OS_NAME}" == linux ]]; then
   		 	 s="${l[6]}"
 
   		 		#Fix for raspberry pi *** maybe outdated
- 		 		[[ "${#s}" -gt 3 ]] && s="${l[6]}"
+ 		 		[[ ${#s} -gt 3 ]] && s="${l[6]}"
 
   		  soundlevel=${s//%/}
   		  inc_sound=$(($soundlevel + 1))
@@ -134,34 +135,32 @@ fi
 
 getplaylist() {
 	_curl="$(curl -s -H 'Accept: application/json' https://somafm.com/channels.json | jq  -r '.. | select(.description? and .listeners and .id? or .url?) | "_listeners_=\(.listeners) _fid_ \(.id) _fdes_ \(.description) _furl_ \(.url)"')"
-	_curl="${_curl// _furl_ null_fid_ null _fdes_ null _furl_ /\\n}" 
+	_curl="${_curl// _furl_ null_fid_ null _fdes_ null _furl_ /\\n}"
 	_curl="${_curl//_fid_ null _fdes_ null _furl_ /\\n}"
 	_curl="${_curl//_listeners_=null /}"
-	_curl="${_curl//_furl_ null/}"		 
+	_curl="${_curl//_furl_ null/}"
 	_curl="${_curl// _fid_ /\\n }"
-	_curl="${_curl// _fdes_ / - }" 
+	_curl="${_curl// _fdes_ / - }"
 	_curl="${_curl//_listeners_=/\\nlisteners=}"
-	_curl="${_curl//\\n/}" 
- 
-		mapfile -t _curl <<< "$_curl"
+	_curl="${_curl//\\n/}"
+
+		mapfile -t _curl <<< $_curl
 		i=0
-		while [[ $i -le "${#_curl[*]}" ]]
-			do			 
-				 listeners+="(${_curl[$i]})"
-				 [[ "${_curl[$i]}" == *"listeners="* ]] && listeners=${_curl[$i]%% *} #&&  listeners=${listeners//listeners=/} 			 
-			 	 [[ "${_curl[$i]}" == *" - "* ]] && description="${_curl[$i]}" && description="${description//$listeners/}" && description="${description/ /}" #&& echo "$description"	
-			 	 [[ "${_curl[$i]}" == *"130.pls"* ]] && echo -e "${_curl[$i]}#${description}#${listeners}"					
-			     ((i++))			
+		while [[ $i -le ${#_curl[*]} ]]
+			do
+				 listeners+=(${_curl[$i]})
+				 [[ "${_curl[$i]}" == *"listeners="* ]] && listeners=${_curl[$i]%% *} #&&  listeners=${listeners//listeners=/}
+			 	 [[ "${_curl[$i]}" == *" - "* ]] && description="${_curl[$i]}" && description=${description//$listeners/} && description=${description/ /} #&& echo "$description"
+			 	 [[ "${_curl[$i]}" == *"130.pls"* ]] && echo -e "${_curl[$i]}#${description}#${listeners}"
+			     ((i++))
 			done
 }
 
 mapfile playlist <<< "$(getplaylist)"
-
-#Create a copy of the oringal playlist for channel total info because it gets changed when playing favorites
 mapfile playlistfull <<< "${playlist[*]}"
 
 favoritesfull() {
-	mapfile fv < "$favs"
+	mapfile fv < $favs
 	echo -en "${#fv[*]}"
 }
 
@@ -170,78 +169,78 @@ favoritesfull() {
 # Arguments accepted are quit, shuffle, favorites, or custom stream URL
 # Works great with keyboard shortcuts or KDE-connect to play music_thingy in the backend.
 # Examples "music_thingy https://ice2.somafm.com/secretagent-128-mp3" "music_thingy quit"  "music_thingy shuffle"  "music_thingy favorites"
-if [[ "$1" ]];then
-        if [[ "${1}" != quit && "${1}" != shuffle && "${1}" != favorites && "${1}" != del_favorite  && "${1}" != add_favorite && "${1}" != inc_vol && "${1}" != dec_vol ]];then
+if [[ $1 ]];then
+        if [[ ${1} != quit && ${1} != shuffle && ${1} != favorites && ${1} != del_favorite  && ${1} != add_favorite && ${1} != inc_vol && ${1} != dec_vol ]];then
         	cleanup
-        	echo "$BASHPID" > /tmp/music_thingy/music_thingy.pid
+        	echo $BASHPID > /tmp/music_thingy/music_thingy.pid
         	playlist="$1"
-        	mapfile playlist <<< "$playlist"
+        	mapfile playlist <<< $playlist
         fi
 
-        if [[ "${1}" == favorites ]]; then
+        if [[ ${1} == favorites ]]; then
      	   cleanup
-     	   echo "$BASHPID" > /tmp/music_thingy/music_thingy.pid
-     	   REPLY="f"
+     	   echo $BASHPID > /tmp/music_thingy/music_thingy.pid
+     	   REPLY=f
         fi
 
-	    if [[ "${1}" == inc_vol ]]; then
-        	 REPLY="+"
+	    if [[ ${1} == inc_vol ]]; then
+        	 REPLY=+
         	 vol
-        	 return
+        	 exit 0
 	  	fi
 
 	    if [[ ${1} == dec_vol ]]; then
-        	 REPLY="-"
+        	 REPLY=-
         	 vol
-        	 return
+        	 exit 0
 	  	fi
 
-	    if [[ "${1}" == add_favorite ]]; then
- 			 tmp="$(</tmp/music_thingy/music_thingy.info)" ### Repeat delete cmds so no duplicate entries
-			 foo="$(< "$favs" )"
-			 echo "${foo//"$tmp"}" | sed '/^$/d' > "$favs"
-			 fav="$(</tmp/music_thingy/music_thingy.info)"
-			 echo "$fav" >> "$favs"
-			 if [[ "$notify_active" == 1 ]]; then
+	    if [[ ${1} == add_favorite ]]; then
+ 			 tmp=$(</tmp/music_thingy/music_thingy.info) ### Repeat delete cmds so no duplicate entries
+			 foo=$(<$favs)
+			 echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
+			 fav=$(</tmp/music_thingy/music_thingy.info)
+			 echo $fav >> $favs
+			 if [[ $notify_active == 1 ]]; then
 			   $notify "${fav//\\n */}
 
 
 Added to favorites."
 			 fi
 
-   		 return
+   		 exit 0
 		fi
 
-	 	if [[ "${1}" == del_favorite ]]; then
-			tmp="$(</tmp/music_thingy/music_thingy.info)"
-			foo="$(< "$favs")"
-			echo "${foo//"$tmp"}" | sed '/^$/d' > "$favs"
-			if  [[ ! -s "$ConfigDir/favorites" && "$notify_active" == 1 ]];then
+	 	if [[ ${1} == del_favorite ]]; then
+			tmp=$(</tmp/music_thingy/music_thingy.info)
+			foo=$(<$favs)
+			echo "${foo//"$tmp"}" | sed '/^$/d' > $favs
+			if  [[ ! -s $ConfigDir/favorites && $notify_active == 1 ]];then
 			 $notify "
 
 Playlist is empty."
-			 return
+			 exit 0
 			fi
-			fav="$(</tmp/music_thingy/music_thingy.info)"
+			fav=$(</tmp/music_thingy/music_thingy.info)
 
-			if [[ "$notify_active" == 1 ]]; then
+			if [[ $notify_active == 1 ]]; then
 			 $notify "${fav//\\n */}
 
 
 Deleted from favorites."
-			
+			exit 0
 			fi
-			fav="$(</tmp/music_thingy/music_thingy.info)"
-         	return
+			fav=$(</tmp/music_thingy/music_thingy.info)
+         	exit 0
 		fi
 
-	if [[ "${1}" == shuffle ]]; then
+	if [[ ${1} == shuffle ]]; then
        	   cleanup
-     	   echo "$BASHPID" > /tmp/music_thingy/music_thingy.pid
+     	   echo $BASHPID > /tmp/music_thingy/music_thingy.pid
      	   REPLY=s
 	fi
 
-	if [[ "${1}" == quit ]]; then
+	if [[ ${1} == quit ]]; then
         	cleanup
 			exit 0
 	fi
@@ -250,42 +249,42 @@ fi
 body(){
 
 footer(){
-	tput cup "$(tput lines)" 0
+	tput cup $(tput lines) 0
 	echo -e "\\n${ORANGE}Interactive Music Thingy${BLUE}~ $:-)"
 }
 
 QUERYS(){
 
-	mapfile x < "$ConfigDir/config"
+	mapfile x <$ConfigDir/config
 	var=0
-	v="$((${#x[*]} - 1))"
+	v=$((${#x[*]} - 1))
 
-while [[ "$var" -le "$v" ]]
+while [[ $var -le $v ]]
 	do
-		if [[ "$REPLY" == "$var" ]];then
+		if [[ $REPLY == $var ]];then
 			echo -e "  ${RED}<Config>\\n ${BLUE} * Press 0..9${RED}"
-			x="${x//\"/}"
+			x=${x//\"/}
 			a="$var:${x[$var]}"
 			name="${x[$var]}"
 			c="${#name}"
 			((c--)) && ((c--))
-			value="${name[*]:$c}"
+			value=${name[*]:$c}
 			(( 0 == value )) && cv=1
 			(( 1 == value )) && cv=0
 			(( 3 == value )) && cv=3
 			(( 4 == value )) && cv=4
-		
-			n1="${name%??}$value"
-			n2="${name%??}$cv"
 
-			mapfile x2 < "$ConfigDir/config"
+			n1=${name%??}$value
+			n2=${name%??}$cv
+
+			mapfile x2 <$ConfigDir/config
 			var2=0
 			v2=$((${#x2[*]} - 1))
 
-				while [[ "$var2" -le "$v2" ]]
+				while [[ $var2 -le $v2 ]]
 					do
-						try="${x2[$var2]}"
-						try="${try//\"/}"
+						try=${x2[$var2]}
+						try=${try//\"/}
 						arr+=(${try/$n1/$n2})
 						((var2++))
 
@@ -293,20 +292,20 @@ while [[ "$var" -le "$v" ]]
 
 					try2="${arr[*]}"
 					try2="${try2//\"/}"
-					echo -en "${try2// /\\n}" > "$ConfigDir/config"
+					echo -e "${try2// /\\n}" > $ConfigDir/config
 
-					source "$config"
+					source $config
 
-					mapfile x3 < "$ConfigDir/config"
+					mapfile x3 <$ConfigDir/config
 						    i=0
 							ii=$((${#x3[*]} - 1))
 							while [[ $i -le $ii ]]
 								do
-								echo -en "${BLUE}  * ${RED}Status: ${BLUE}${x3[$i]}${RED}"
+								echo -e ""        ${BLUE}     * ${RED}Status: ${BLUE}${x3[$i]}${RED}""
 							((i++))
 						done
 
-						echo -e "\\n${RED}  </Config>${BLUE}"
+						echo -e "${RED}  </Config>${BLUE}"
 						footer
 			exit 0
 		fi
@@ -317,7 +316,7 @@ done
 
 
 
-if [[ "${REPLY}" == h ]];then
+if [[ ${REPLY} == h ]];then
 	echo -e "${BLUE}  ${RED}<Help>"
 	echo -e "${BLUE} * ${RED} [s] ${BLUE} Shuffle All"
 	echo -e "${BLUE} * ${RED} [f] ${BLUE} Shuffle Favorites"
@@ -340,70 +339,70 @@ if [[ "${REPLY}" == h ]];then
  return
 fi
 
-if [[ "$REPLY" == a ]];then
-    if [[ -s "$favs" ]];then ## make sure favorites is not empty
-		tmpadd="$(</tmp/music_thingy/music_thingy.info)" ### Repeat the delete cmds so no duplicate entries
-		foo=$(< "$favs")
+if [[ $REPLY == a ]];then
+    if [[ -s $favs ]];then ## make sure favorites is not empty
+		tmpadd=$(</tmp/music_thingy/music_thingy.info) ### Repeat the delete cmds so no duplicate entries
+		foo=$(<$favs)
 		addmsg="${foo//"$tmpadd"}"
-		echo "${foo//"$tmpadd"}" | sed '/^$/d' > "$favs"
+		echo "${foo//"$tmpadd"}" | sed '/^$/d' > $favs
 	fi
-	fav="$(</tmp/music_thingy/music_thingy.info)"
-	echo "$fav" >> "$favs"
+	fav=$(</tmp/music_thingy/music_thingy.info)
+	echo $fav >> $favs
 
-	
-	REPLY="af"
+
+	REPLY=af
 
 fi
 
-if [[ "$REPLY" == l ]];then
-	echo -e "${BLUE}  ${RED}<Favorites>\\n${BLUE}$(< "$favs")"
+if [[ $REPLY == l ]];then
+	echo -e "${BLUE}  ${RED}<Favorites>\\n${BLUE}$(<$favs)"
 	echo -e "${BLUE}  ${RED}</Favorites>${BLUE}"
 	footer
 	return
 fi
 
-if [[ "$REPLY" == d ]];then
-	[[ -s /tmp/music_thingy/music_thingy.info ]] && tmpdel="$(</tmp/music_thingy/music_thingy.info)"
-	foo=$(< "$favs")
-	[[ ! -s "$favs" ]] && REPLY="fe"
-	[[ -s "$favs" ]] && REPLY="df" && echo "${foo//"$tmpdel"}" | sed '/^$/d' > "$favs"
-	REPLY="df"
+if [[ $REPLY == d ]];then
+	[[ -s /tmp/music_thingy/music_thingy.info ]] && tmpdel=$(</tmp/music_thingy/music_thingy.info)
+	foo=$(<$favs)
+	[[ ! -s $favs ]] && REPLY=fe
+	[[ -s $favs ]] && REPLY=df && echo "${foo//"$tmpdel"}" | sed '/^$/d' > $favs
+	REPLY=df
 
 fi
 
-if [[ "$REPLY" == k ]];then
+if [[ $REPLY == k ]];then
 	cleanup
 	unset REPLY
 fi
 
-if [[ "${REPLY}" == c ]];then
+if [[ ${REPLY} == c ]];then
 	echo -e "  ${RED}<Config>\\n ${BLUE} * Press 0..9${RED}"
-	mapfile x < "$ConfigDir/config"
+	mapfile x <$ConfigDir/config
 		i=0
-	    ii="$((${#x[*]} - 1))"
-		while [[ "$i" -le "$ii" ]]
+	    ii=$((${#x[*]} - 1))
+		while [[ $i -le $ii ]]
 		 do
-		    x="${x[$i]}"
+		    x=${x[$i]}
 			echo -ne "${BLUE}  * ${RED}Status: ${BLUE}${x//\"/}"
 			((i++))
 		done
-	echo -e "\\n${RED}  </Config>${BLUE}"
+	echo -e "${RED}  </Config>${BLUE}"
 
 	footer
  return
 fi
 
-if [[ "$REPLY" == t ]];then
+if [[ $REPLY == t ]];then
 echo "${playlistfull[*]}"
 return
 fi
 
-if [[ "$REPLY" == df ]];then
-		 if [[ ! -s "$favs" ]];then
-		 shortmsg="Favorites Empty"
+if [[ $REPLY == df ]];then
+		 if [[ ! -s $favs ]];then
+		 shortmsg="Favorites Empty ::"
 		 fi
-		 if [[ -s "$favs" ]];then
-			mapfile playlist < "$favs"
+		 if [[ -s $favs ]];then
+			mapfile playlist < $favs
 			nu="0-$((${#playlist[*]}-1))"
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${playlist[$shuffle]}"
@@ -413,34 +412,34 @@ if [[ "$REPLY" == df ]];then
 		fi
 fi
 
-if [[ "$REPLY" == f ]];then
-		 if [[ ! -s "$favs" ]];then
+if [[ $REPLY == f ]];then
+		 if [[ ! -s $favs ]];then
 		 shortmsg="Favorites Empty ::"
 		 fi
-		 if [[ -s "$favs" ]];then
-			mapfile playlist < "$favs"
+		 if [[ -s $favs ]];then
+			mapfile playlist < $favs
 			nu="0-$((${#playlist[*]}-1))"
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${playlist[$shuffle]}"
-			findlisteners			
+			findlisteners
 			shortmsg="Shuffling Favorites"
 			player_start
 		fi
 fi
 
-if [[ "$REPLY" == af ]];then
+if [[ $REPLY == af ]];then
 		if [[ -s /tmp/music_thingy/music_thingy.info ]];then
 			mapfile refresh < /tmp/music_thingy/music_thingy.info
 			nu="0-$((${#refresh[*]}-1))"
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${refresh[$shuffle]}"
 			findlisteners
-			[[ "$REPLY" == af ]] && shortmsg="Refreshing New Favorite"
+			[[ $REPLY == af ]] && shortmsg="Refreshing New Favorite"
 			player_start
 	    fi
 fi
 
-if [[ "$REPLY" == p ]];then
+if [[ $REPLY == p ]];then
 		if [[ -s /tmp/music_thingy/music_thingy.previous.info ]];then
 			mapfile previous < /tmp/music_thingy/music_thingy.previous.info
 			nu="0-$((${#previous[*]}-1))"
@@ -452,7 +451,7 @@ if [[ "$REPLY" == p ]];then
 	    fi
 fi
 
-if [[ "$REPLY" == r ]];then
+if [[ $REPLY == r ]];then
 		if [[ -s /tmp/music_thingy/music_thingy.info ]];then
 			mapfile refresh < /tmp/music_thingy/music_thingy.info
 			nu="0-$((${#refresh[*]}-1))"
@@ -464,7 +463,7 @@ if [[ "$REPLY" == r ]];then
 		fi
 fi
 
-if [[ "$REPLY" == s ]];then
+if [[ $REPLY == s ]];then
         nu="0-$((${#playlist[*]}-1))"
 		shuffle="$(shuf -i $nu -n 1)"
 		pl="${playlist[$shuffle]}"
@@ -477,78 +476,78 @@ QUERYS
 
 dofortune() {
     # Added a tput function for fortune
-    # This helps message, albeit a rather quick one display nicely. 
-	mapfile df <<< "$(fortune)"
-	i="0"
-	c="11"
-	while [[ "$i" -le "${#df[@]}" ]]
+    # This helps message, albeit a rather quick one display nicely.
+	mapfile df <<< $(fortune)
+	i=0
+	c=11
+	while [[ $i -le ${#df[@]} ]]
 		do
 			echo -en "$(tput cup $c 8) ${df[$i]}"
-			((i++)) 
+			((i++))
 			((c++))
 		done
 }
 
 msg() {
-	[[ ! "$shortmsg" ]] && shortmsg="$(tput cup 11 8)$(dofortune)"
+	[[ ! $shortmsg ]] && shortmsg="$(tput cup 11 8)$(dofortune)"
 	echo "$(printf '\033[H\033[2J')$(logo)
 	$(tput cup 11 14)${shortmsg}
-	$([[ "$tr" ]] && echo "$(tput cup 12 14)Gathering data for: ${tr}")
-	$([[ "$tr" ]] && echo "$(tput cup 13 14)Please wait...")
-	$([[ "$tmpdel" ]] && echo "$(tput cup 12 14)Deleted: ${tmpdel}")
-	$([[ "$addmsg" ]] && echo "$(tput cup 12 14)Added: ${addmsg}")
+	$([[ $tr ]] && echo "$(tput cup 12 14)Gathering data for: ${tr}")
+	$([[ $tr ]] && echo "$(tput cup 13 14)Please wait...")
+	$([[ $tmpdel ]] && echo "$(tput cup 12 14)Deleted: ${tmpdel}")
+	$([[ $addmsg ]] && echo "$(tput cup 12 14)Added: ${addmsg}")
 	$(footer)"
 }
 
 
-if [[ -n "$REPLY" && ! "$REPLY" =~ [^[:alnum:][:space:]]  && ! "$REPLY" =~ ^[0-9]$ ]];then
+if [[ -n $REPLY && ! $REPLY =~ [^[:alnum:][:space:]]  && ! $REPLY =~ ^[0-9]$ ]];then
 
-	while read -r -t 3 -u "${fd}" info
+	while read -t 3 -u ${fd} info
 		do
-			if [[ "$info" == icy-title* ]];then
+			if [[ $info == icy-title* ]];then
 					[[ -e /tmp/music_thingy/music_thingy.title ]] && rm /tmp/music_thingy/music_thingy.title
 					title="${info//icy-title:/}"
 					# Echoing to tmp is needed here because the var won't be set after the file descriptor is read.
 					# You can test this by enabling the echo and changing the volume with +/- keys
-					echo "$title" > /tmp/music_thingy/music_thingy.title	
-					#disabled echo -e "   *${title}"				
+					echo $title > /tmp/music_thingy/music_thingy.title
+					#disabled echo -e "   *${title}"
 			fi
 
-			if [[ "$info" =~ icy-name: ]];then
+			if [[ $info =~ icy-name: ]];then
 					[[ -e /tmp/music_thingy/music_thingy.name ]] && rm /tmp/music_thingy/music_thingy.name
 					name="${info/icy-name:/}"
-					echo "$name" > /tmp/music_thingy/music_thingy.name
-					#disabled echo -e "   *${name}"				
+					echo $name > /tmp/music_thingy/music_thingy.name
+					#disabled echo -e "   *${name}"
 			fi
 
-			if [[ "$info" =~ icy-genre: ]];then
+			if [[ $info =~ icy-genre: ]];then
 					[[ -e /tmp/music_thingy/music_thingy.genre ]] && rm /tmp/music_thingy/music_thingy.genre
 					genre="${info/icy-genre:/}"
-					echo "$genre"> /tmp/music_thingy/music_thingy.genre
-					#disabledecho -e "   *${genre}"				
+					echo $genre > /tmp/music_thingy/music_thingy.genre
+					#disabledecho -e "   *${genre}"
 			fi
 
-					# We really don't wont too see the pv data, just our custom msg 
+					# We really don't wont too see the pv data, just our custom msg
 					# We try to hide it with tput 0 0
-		done | pv -N "$(msg)$(tput cup 0 0)$(tput invis)" -F "%N"
+		done | pv -N "$(msg)$(tput cup 0 0)" -F "%N"
 fi
 
     # close the file descriptor
 	exec {fd}<&-
     # source config again
-	source "$config"
+	source $config
 
-[[ -e /tmp/music_thingy/music_thingy.title     ]] &&  echo -e "   *$(</tmp/music_thingy/music_thingy.title)"
-[[ -e /tmp/music_thingy/music_thingy.name      ]] &&  echo -e "   *$(</tmp/music_thingy/music_thingy.name)"
-[[ -e /tmp/music_thingy/music_thingy.genre 	   ]] &&  echo -e "   *$(</tmp/music_thingy/music_thingy.genre)"
-[[ "$show_listeners" == 1	&& ! "$listeners" && -e /tmp/music_thingy/music_thingy.pid  && -e /tmp/music_thingy/music_thingy.listeners ]] && listeners="$(</tmp/music_thingy/music_thingy.listeners)"
-[[ "$show_listeners" == 1	&& "$listeners"    	   ]] &&  echo -e "   * Listeners: $listeners"
-[[ "$show_channels" == 1  					   ]] &&  echo -e "   * Channels: ${#playlistfull[*]}"
-[[ "$show_favorites" == 1 					   ]] &&  echo -e "   * Favorites: $(favoritesfull)"
-[[ "$show_volume_levels" == 1 				   ]] &&  echo -e "$(vol)"
+[[ -e /tmp/music_thingy/music_thingy.title     ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.title)"
+[[ -e /tmp/music_thingy/music_thingy.name      ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.name)"
+[[ -e /tmp/music_thingy/music_thingy.genre 	   ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.genre)"
+[[ $show_listeners == 1	&& ! $listeners && -e /tmp/music_thingy/music_thingy.pid  && -e /tmp/music_thingy/music_thingy.listeners ]] && listeners=$(</tmp/music_thingy/music_thingy.listeners)
+[[ $show_listeners == 1	&& $listeners    	   ]] &&  echo -e "   * Listeners: $listeners"
+[[ $show_channels == 1  					   ]] &&  echo -e "   * Channels: ${#playlistfull[*]}"
+[[ $show_favorites == 1 					   ]] &&  echo -e "   * Favorites: $(favoritesfull)"
+[[ $show_volume_levels == 1 				   ]] &&  echo -e "$(vol)"
 
-[[ ! "$REPLY" ]] &&  echo -e "   * Press \"s\" to start."
-[[ ! "$REPLY" ]] &&  echo -e "   * Press \"h\" for help."
+[[ ! $REPLY ]] &&  echo -e "   * Press \"s\" to start."
+[[ ! $REPLY ]] &&  echo -e "   * Press \"h\" for help."
 
 footer
 }
@@ -556,53 +555,53 @@ footer
 
 main() {
 
-	findlisteners() {				
+	findlisteners() {
 			#### findlisteners
-			# For displaying listeners		
-			if [[ "$show_listeners" == 1 ]];then	
-				i="0"
-					while [[ $i -le "${#playlistfull[*]}" ]]
-						do	
-							#Find listeners in the playlistfull array by matching it with the requested stream "$tr" variable.		 
-				 			[[ "${playlistfull[$i]}" == *"${tr}"* ]] && listeners="${playlistfull[$i]##* }" &&  listeners="${listeners//#listeners=/}"			 
-			     			((i++))			
+			# For displaying listeners
+			if [[ $show_listeners == 1 ]];then
+				i=0
+					while [[ $i -le ${#playlistfull[*]} ]]
+						do
+							#Find listeners in the playlistfull array by matching it with the requested stream "$tr" variable.
+				 			[[ "${playlistfull[$i]}" == *"${tr}"* ]] && listeners=${playlistfull[$i]##* } &&  listeners=${listeners//#listeners=/}
+			     			((i++))
 						done
-				#Get rid of trailing line from the loop.					
-				listeners="$(echo -en "${listeners}")"
-				
+				#Get rid of trailing line from the loop.
+				listeners=$(echo -en ${listeners})
+
 				#Echo a "static" listener var to file because listeners var is empty when changing volume
-				[[ "$listeners" ]] && echo -e "$listeners" > /tmp/music_thingy/music_thingy.listeners
+				[[ $listeners ]] && echo -e "$listeners" > /tmp/music_thingy/music_thingy.listeners
 			fi
-				
-			if [[ "$show_listeners" == 0 && -e /tmp/music_thingy/music_thingy.listeners ]];then			
-			    rm /tmp/music_thingy/music_thingy.listeners			
+
+			if [[ $show_listeners == 0 && -e /tmp/music_thingy/music_thingy.listeners ]];then
+			    rm /tmp/music_thingy/music_thingy.listeners
 			fi
 			#### /findlisteners
 			}
-			
+
 	player_start() {
-				
+
     		# Using the "#" to break the string so the 1st element in the array will just be the url
-			tr=(${pl//#/ })	
-			
+			tr=(${pl//#/ })
+
         	cleanup
-        	(echo "$BASHPID" > /tmp/music_thingy/music_thingy.pid
-        	source "$config"
-        	[[ "$debug_disable_player" == 1 ]] && return 0
-        	exec -a music_thingy "$player" --quiet --display-tags=\* "${tr}") >&${fd} &
+        	(echo $BASHPID > /tmp/music_thingy/music_thingy.pid
+        	source $config
+        	[[ $debug_disable_player == 1 ]] && return 0
+        	exec -a music_thingy $player --quiet --display-tags=\* ${tr}) >&${fd} &
 	    	info_out
 			}
 
 	info_out() {
 			# Some variables won't be set because the player creates them
 			# So for things like refresh, previous, add / del a tmp file works great.
-			[[ "${tr}" ]] && echo -en "${tr}" > /tmp/music_thingy/music_thingy.info
+			[[ ${tr} ]] && echo -en "${tr}" > /tmp/music_thingy/music_thingy.info
 			 }
-			 
-			 
-	#Clear the terminal			 
+
+
+	#Clear the terminal
 	tput clear
-    tput civis
+
 	# Make the terminal black
 	printf "\033[30m\033[0m"
 
@@ -616,10 +615,10 @@ main() {
 	logo
 
 	## Make a tmp file descriptor Thanks chatgpt!
-	data="$(mktemp -u)"
+	data=$(mktemp -u)
 	mkfifo "$data"
 	exec {fd}<>"$data"
-	rm "$data"
+	rm $data
 
 	# Set the body location with tput
 	echo "$(tput cup 10 0)${BLUE}"
@@ -640,27 +639,27 @@ main() {
 		 testplayer=($(which ${player%}))
 		 pv="pv"
 		 testpv=($(which ${pv%}))
-		 if [[ "${OS_NAME}" == haiku ]]; then
+		 if [[ ${OS_NAME} == haiku ]]; then
 			notify="notify"
 			notify=($(which ${notify%}))
-				[[ -z "${notify[0]}" ]] &&  echo -e "${ORANGE}notify${RED} not installed. ${BLUE}Please install it with your package manager. :-)" && break
+				[[ -z ${notify[0]} ]] &&  echo -e "${ORANGE}notify${RED} not installed. ${BLUE}Please install it with your package manager. :-)" && break
 
-		elif [[ "${OS_NAME}" == linux ]]; then
+		elif [[ ${OS_NAME} == linux ]]; then
 			notify="notify-send"
 			notify=($(which ${notify%}))
-				[[ -z "${notify[0]}" ]] && echo -e "${ORANGE}notify-send${RED} not installed. ${BLUE}Please install it with your package manager. :-)" && break
+				[[ -z ${notify[0]} ]] && echo -e "${ORANGE}notify-send${RED} not installed. ${BLUE}Please install it with your package manager. :-)" && break
 
 		fi
-		[[ -z "${testplayer[0]}" ]] && echo -e "${ORANGE}${player}${RED} not installed. ${BLUE}Please install it with your package manager.  :-)" && break
-		[[ -z "${testpv[0]}" ]] && echo -e "${ORANGE}pv${RED} not installed. ${BLUE}Please install it with your package manager. :-)" && break
+		[[ -z ${testplayer[0]} ]] && echo -e "${ORANGE}${player}${RED} not installed. ${BLUE}Please install it with your package manager.  :-)" && break
+		[[ -z ${testpv[0]} ]] && echo -e "${ORANGE}pv${RED} not installed. ${BLUE}Please install it with your package manager. :-)" && break
 
-		if [[ "${REPLY}" == q ]];then
-			    tput cup "$(tput lines)" 0
+		if [[ ${REPLY} == q ]];then
+			    tput cup $(tput lines) 0
 				echo -e "${ORANGE}Interactive Music Thingy${BLUE}~ $:-) Logging out!"
 		 	    cleanup
 		        break
 		  else
-		  	 
-		  	 read -r -s -p "$(main)" -n 1
+		  	 # This doesn't seem to be syntactically correct or a popular way to read a command but works none-the-less
+		  	 read -s -p "$(main)" -n 1
 		fi
 	done
