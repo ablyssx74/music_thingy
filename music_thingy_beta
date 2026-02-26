@@ -38,7 +38,7 @@ if [[ ! $config ]];then
 			favs="$ConfigDir/favorites"
 			config="$ConfigDir/config"
 			if [[ ! -s $config ]];then
-					declare -A _config=( [notify_active]="\"1\"" [show_listeners]="\"1\"" [use_pactl_to_get_volume]="\"1\"" [show_channels]="\"1\"" [show_favorites]="\"1\"")
+					declare -A _config=( [notify_active]="\"1\"" [show_listeners]="\"1\"" [show_volume_levels]="\"1\"" [use_pactl_to_get_volume]="\"1\"" [show_channels]="\"1\"" [show_favorites]="\"1\"")
 						for value in "${!_config[@]}"
 							do
 								echo "$value=${_config[$value]}" >> $config
@@ -529,7 +529,7 @@ if [[ -n $REPLY && ! $REPLY =~ [^[:alnum:][:space:]]  && ! $REPLY =~ ^[0-9]$ ]];
 
 					# We really don't wont too see the pv data, just our custom msg
 					# We try to hide it with tput 0 0
-		done | pv -N "$(msg)$(tput cup 0 0)" -F "%N"
+		done | pv -N "$(msg)$(tput cup 0 0)$(tput setaf 0)" -F "%N"
 fi
 
     # close the file descriptor
