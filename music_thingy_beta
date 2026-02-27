@@ -68,15 +68,16 @@ cleanup(){
 
 vol() {
 source $config
-	  if [[ $show_volume_levels == 0 ]];then
+
+if [[ $show_volume_levels == 0 && ! -e /tmp/music_thingy/music_thingy.pid ]];then
 	  	  return
-	  fi
+fi
 	  if [[ ${OS_NAME} == haiku ]]; then
   		  [[ $REPLY == + ]] && setvolume -i > /dev/null
   		  [[ $REPLY == - ]] && setvolume -d > /dev/null
   		  [[ $REPLY == m ]] && setvolume -m > /dev/null
   		  [[ $REPLY == u ]] && setvolume -u > /dev/null
-  		  echo -e "   * $(setvolume)"
+  		  echo -e "  * $(setvolume)"
 
 
 elif [[ ${OS_NAME} == linux ]]; then
@@ -264,15 +265,25 @@ while [[ $var -le $v ]]
 		if [[ $REPLY == $var ]];then
 			echo -e "  ${RED}<Config>\\n ${BLUE} * Press 0..9${RED}"
 			x=${x//\"/}
-			a="$var:${x[$var]}"
+			#a="$var:${x[$var]}"
 			name="${x[$var]}"
 			c="${#name}"
 			((c--)) && ((c--))
 			value=${name[*]:$c}
+				
+			# Just a hack to change from 1 or 0	
 			(( 0 == value )) && cv=1
 			(( 1 == value )) && cv=0
-			(( 3 == value )) && cv=3
-			(( 4 == value )) && cv=4
+			
+				# Keep the screen from refreshing
+				(( 3 == value )) && cv=3
+				(( 4 == value )) && cv=4
+				(( 5 == value )) && cv=5
+				(( 6 == value )) && cv=6
+				(( 7 == value )) && cv=7
+				(( 8 == value )) && cv=8
+				(( 4 == value )) && cv=4
+				(( 9 == value )) && cv=9
 
 			n1=${name%??}$value
 			n2=${name%??}$cv
@@ -387,7 +398,7 @@ if [[ "${REPLY}" == c ]];then
 			echo -ne "${BLUE}  * ${RED}Status: ${BLUE}${x//\"/}"
 			((i++))
 		done
-	echo -e "\\n${RED}  </Config>${BLUE}"
+	echo -e "${RED}  </Config>${BLUE}"
 
 	footer
  return
@@ -501,7 +512,7 @@ msg() {
 }
 
 
-if [[ -n "$REPLY" && ! "$REPLY" =~ [^[:alnum:][:space:]]  && ! "$REPLY" =~ ^[0-9]$ ]];then
+if [[ -n "$REPLY" && ! "$REPLY" =~ [^[:alnum:][:space:]]  && ! "$REPLY" =~ ^[0-9]$ && "$REPLY" != . ]];then
 
 	while read -r -t 3 -u "${fd}" info
 		do
@@ -563,15 +574,14 @@ main() {
 				i="0"
 					while [[ $i -le "${#playlistfull[*]}" ]]
 						do
-							#Find listeners in the playlistfull array by matching it with the requested stream "$tr" variable.
-				 			[[ "${playlistfull[$i]}" == *"${tr}"* ]] && listeners="${playlistfull[$i]##* }" &&  listeners="${listeners//#listeners=/}"
+							#Find listeners in the playlistfull array by matching it with the requested stream "$pl" string.
+				 			[[ "${playlistfull[$i]}" == *"${pl}"* ]] && l="${playlistfull[$i]}" && listeners="${l##* }" && listeners="${listeners//#listeners=/}"
 			     			((i++))
+			     			break
 						done
-				#Get rid of trailing line from the loop.
-				listeners="$(echo -en "${listeners}")"
-
+				
 				#Echo a "static" listener var to file because listeners var is empty when changing volume
-				[[ "$listeners" ]] && echo -e "$listeners" > /tmp/music_thingy/music_thingy.listeners
+				[[ "$listeners" ]] && echo -en "$listeners" > /tmp/music_thingy/music_thingy.listeners
 			fi
 
 			if [[ "$show_listeners" == 0 && -e /tmp/music_thingy/music_thingy.listeners ]];then
