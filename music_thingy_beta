@@ -67,46 +67,45 @@ cleanup(){
 #trap 'cleanup' EXIT
 
 vol() {
-source "$config"
-	  if [[ "$show_volume_levels" == 0 ]];then
+source $config
+	  if [[ $show_volume_levels == 0 ]];then
 	  	  return
 	  fi
-	  if [[ "${OS_NAME}" == haiku ]]; then
-  		  [[ "$REPLY" == + ]] && setvolume -i > /dev/null
-  		  [[ "$REPLY" == - ]] && setvolume -d > /dev/null
-  		  [[ "$REPLY" == m ]] && setvolume -m > /dev/null
-  		  [[ "$REPLY" == u ]] && setvolume -u > /dev/null
+	  if [[ ${OS_NAME} == haiku ]]; then
+  		  [[ $REPLY == + ]] && setvolume -i > /dev/null
+  		  [[ $REPLY == - ]] && setvolume -d > /dev/null
+  		  [[ $REPLY == m ]] && setvolume -m > /dev/null
+  		  [[ $REPLY == u ]] && setvolume -u > /dev/null
   		  echo -e "   * $(setvolume)"
 
 
-elif [[ "${OS_NAME}" == linux ]]; then
+elif [[ ${OS_NAME} == linux ]]; then
 
-	if [[ "$use_pactl_to_get_volume" == 1 ]];then
+	if [[ $use_pactl_to_get_volume == 1 && $show_volume_levels = 1 ]];then
 
   		  [[ -e "/tmp/music_thingy/music_thingy.title" ]] && foo="$(</tmp/music_thingy/music_thingy.title)"
-  		  foo="${foo[0]}"
-  		  foo2=$(pactl list sink-inputs | grep -B 25 "media.name = \"${foo} - mpv\"")
+  		  foo2="$(pactl list sink-inputs | grep -B 25 "media.name = \"${foo} - mpv\"")"
   		  mapfile x <<< "$foo2"
   		  x="${x[0]}"
   		  y="${x[10]}"
   		  y=($y)
   		  v="${y[4]}"
   		  sinkID="${x//Sink\ Input\ \#/}"
-		  soundlevel="${v//%/}"
+		  soundlevel=${v//%/}
   		  inc_sound=$(($soundlevel + 1))
   		  dec_sound=$(($soundlevel - 1))
 
-  		  [[ "$REPLY" == + ]] && pactl set-sink-input-volume $sinkID $(($soundlevel + 1))% && s=$(($soundlevel + 1))%
-  		  [[ "$REPLY" == - ]] && pactl set-sink-input-volume $sinkID $(($soundlevel - 1))% && s=$(($soundlevel - 1))%
+  		  [[ $REPLY == + ]] && pactl set-sink-input-volume $sinkID $(($soundlevel + 1))% && s=$(($soundlevel + 1))%
+  		  [[ $REPLY == - ]] && pactl set-sink-input-volume $sinkID $(($soundlevel - 1))% && s=$(($soundlevel - 1))%
 
-  		  [[ -n "$soundlevel" ]] && echo -n "${BLUE}${info}   * Vol ${soundlevel}%"
+  		  [[ -n $soundlevel ]] && echo -n "${BLUE}${info}  * Vol: ${soundlevel}%"
 
 
 	fi
 
-	if [[ "$use_pactl_to_get_volume" == 0 ]];then
+	if [[ $use_pactl_to_get_volume == 0 ]];then
 
-	for l in $(amixer get Master)
+	for l in "$(amixer get Master)"
 		do
 			 l=${l// /_}
  	         l=${l/_[/ }
@@ -115,7 +114,7 @@ elif [[ "${OS_NAME}" == linux ]]; then
   		 	 s="${l[6]}"
 
   		 		#Fix for raspberry pi *** maybe outdated
- 		 		[[ "${#s}" -gt 3 ]] && s="${l[6]}"
+ 		 		[[ ${#s} -gt 3 ]] && s="${l[6]}"
 
   		  soundlevel=${s//%/}
   		  inc_sound=$(($soundlevel + 1))
@@ -126,7 +125,7 @@ elif [[ "${OS_NAME}" == linux ]]; then
   		  [[ $REPLY == m ]] && amixer -q set Master mute
   		  [[ $REPLY == u ]] && amixer -q set Master unmute
 		  [[ ${l[7]} == "[off]" ]] && s=Muted
-  		  echo -n "${BLUE}${info}   * Vol ${s}"
+  		  echo -n "${BLUE}${info}  * Vol: ${s}"
 	done
 	fi
 fi
@@ -134,24 +133,24 @@ fi
 
 getplaylist() {
 	_curl="$(curl -s -H 'Accept: application/json' https://somafm.com/channels.json | jq  -r '.. | select(.description? and .listeners and .id? or .url?) | "_listeners_=\(.listeners) _fid_ \(.id) _fdes_ \(.description) _furl_ \(.url)"')"
-	_curl="${_curl// _furl_ null_fid_ null _fdes_ null _furl_ /\\n}" 
+	_curl="${_curl// _furl_ null_fid_ null _fdes_ null _furl_ /\\n}"
 	_curl="${_curl//_fid_ null _fdes_ null _furl_ /\\n}"
 	_curl="${_curl//_listeners_=null /}"
-	_curl="${_curl//_furl_ null/}"		 
+	_curl="${_curl//_furl_ null/}"
 	_curl="${_curl// _fid_ /\\n }"
-	_curl="${_curl// _fdes_ / - }" 
+	_curl="${_curl// _fdes_ / - }"
 	_curl="${_curl//_listeners_=/\\nlisteners=}"
-	_curl="${_curl//\\n/}" 
- 
+	_curl="${_curl//\\n/}"
+
 		mapfile -t _curl <<< "$_curl"
 		i=0
 		while [[ $i -le "${#_curl[*]}" ]]
-			do			 
+			do
 				 listeners+="(${_curl[$i]})"
-				 [[ "${_curl[$i]}" == *"listeners="* ]] && listeners=${_curl[$i]%% *} #&&  listeners=${listeners//listeners=/} 			 
-			 	 [[ "${_curl[$i]}" == *" - "* ]] && description="${_curl[$i]}" && description="${description//$listeners/}" && description="${description/ /}" #&& echo "$description"	
-			 	 [[ "${_curl[$i]}" == *"130.pls"* ]] && echo -e "${_curl[$i]}#${description}#${listeners}"					
-			     ((i++))			
+				 [[ "${_curl[$i]}" == *"listeners="* ]] && listeners=${_curl[$i]%% *} #&&  listeners=${listeners//listeners=/}
+			 	 [[ "${_curl[$i]}" == *" - "* ]] && description="${_curl[$i]}" && description="${description//$listeners/}" && description="${description/ /}" #&& echo "$description"
+			 	 [[ "${_curl[$i]}" == *"130.pls"* ]] && echo -e "${_curl[$i]}#${description}#${listeners}"
+			     ((i++))
 			done
 }
 
@@ -224,7 +223,7 @@ Playlist is empty."
 			if [[ "$notify_active" == 1 ]]; then
 			 $notify "${fav//\\n */}
 Deleted from favorites."
-			
+
 			fi
 			fav="$(</tmp/music_thingy/music_thingy.info)"
          	return
@@ -346,7 +345,7 @@ if [[ "$REPLY" == a ]];then
 	fav="$(</tmp/music_thingy/music_thingy.info)"
 	echo "$fav" >> "$favs"
 
-	
+
 	REPLY="af"
 
 fi
@@ -418,7 +417,7 @@ if [[ "$REPLY" == f ]];then
 			nu="0-$((${#playlist[*]}-1))"
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${playlist[$shuffle]}"
-			findlisteners			
+			findlisteners
 			shortmsg="Shuffling Favorites"
 			player_start
 		fi
@@ -473,14 +472,14 @@ QUERYS
 
 dofortune() {
     # Added a tput function for fortune
-    # This helps message, albeit a rather quick one display nicely. 
+    # This helps message, albeit a rather quick one display nicely.
 	mapfile df <<< "$(fortune)"
 	i="0"
 	c="11"
 	while [[ "$i" -le "${#df[@]}" ]]
 		do
 			echo -en "$(tput cup $c 8) ${df[$i]}"
-			((i++)) 
+			((i++))
 			((c++))
 		done
 }
@@ -503,45 +502,45 @@ if [[ -n "$REPLY" && ! "$REPLY" =~ [^[:alnum:][:space:]]  && ! "$REPLY" =~ ^[0-9
 		do
 			if [[ "$info" == icy-title* ]];then
 					[[ -e /tmp/music_thingy/music_thingy.title ]] && rm /tmp/music_thingy/music_thingy.title
-					title="${info//icy-title:/}"
+					title="${info//icy-title: /}"
 					# Echoing to tmp is needed here because the var won't be set after the file descriptor is read.
 					# You can test this by enabling the echo and changing the volume with +/- keys
-					echo "$title" > /tmp/music_thingy/music_thingy.title	
-					#disabled echo -e "   *${title}"				
+					echo -en "$title" > /tmp/music_thingy/music_thingy.title
+					#disabled echo -e "   *${title}"
 			fi
 
 			if [[ "$info" =~ icy-name: ]];then
 					[[ -e /tmp/music_thingy/music_thingy.name ]] && rm /tmp/music_thingy/music_thingy.name
-					name="${info/icy-name:/}"
-					echo "$name" > /tmp/music_thingy/music_thingy.name
-					#disabled echo -e "   *${name}"				
+					name="${info/icy-name: /}"
+					echo -en "$name" > /tmp/music_thingy/music_thingy.name
+					#disabled echo -e "   *${name}"
 			fi
 
 			if [[ "$info" =~ icy-genre: ]];then
 					[[ -e /tmp/music_thingy/music_thingy.genre ]] && rm /tmp/music_thingy/music_thingy.genre
-					genre="${info/icy-genre:/}"
-					echo "$genre"> /tmp/music_thingy/music_thingy.genre
-					#disabledecho -e "   *${genre}"				
+					genre="${info/icy-genre: /}"
+					echo -en "$genre"> /tmp/music_thingy/music_thingy.genre
+					#disabledecho -e "   *${genre}"
 			fi
 
-					# We really don't wont too see the pv data, just our custom msg 
+					# We really don't wont too see the pv data, just our custom msg
 					# We try to hide it with tput 0 0
 		done | pv -N "$(msg)$(tput cup 0 0)$(tput setaf 0)" -F "%N"
-fi  
+fi
 
     # close the file descriptor
 	exec {fd}<&-
     # source config again
 	source "$config"
 
-[[ -e /tmp/music_thingy/music_thingy.title     ]] &&  echo -e "   *$(</tmp/music_thingy/music_thingy.title)"
-[[ -e /tmp/music_thingy/music_thingy.name      ]] &&  echo -e "   *$(</tmp/music_thingy/music_thingy.name)"
-[[ -e /tmp/music_thingy/music_thingy.genre 	   ]] &&  echo -e "   *$(</tmp/music_thingy/music_thingy.genre)"
+[[ -e /tmp/music_thingy/music_thingy.title     ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.title)"
+[[ -e /tmp/music_thingy/music_thingy.name      ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.name)"
+[[ -e /tmp/music_thingy/music_thingy.genre 	   ]] &&  echo -e "   * $(</tmp/music_thingy/music_thingy.genre)"
 [[ "$show_listeners" == 1	&& ! "$listeners" && -e /tmp/music_thingy/music_thingy.pid  && -e /tmp/music_thingy/music_thingy.listeners ]] && listeners="$(</tmp/music_thingy/music_thingy.listeners)"
 [[ "$show_listeners" == 1	&& "$listeners"    	   ]] &&  echo -e "   * Listeners: $listeners"
 [[ "$show_channels" == 1  					   ]] &&  echo -e "   * Channels: ${#playlistfull[*]}"
 [[ "$show_favorites" == 1 					   ]] &&  echo -e "   * Favorites: $(favoritesfull)"
-[[ "$show_volume_levels" == 1 				   ]] &&  echo -e "$(vol)"
+[[ $show_volume_levels == 1 ]] &&  echo -e " $(vol)"
 
 [[ ! "$REPLY" ]] &&  echo -e "   * Press \"s\" to start."
 [[ ! "$REPLY" ]] &&  echo -e "   * Press \"h\" for help."
@@ -552,35 +551,35 @@ footer
 
 main() {
 
-	findlisteners() {				
+	findlisteners() {
 			#### findlisteners
-			# For displaying listeners		
-			if [[ "$show_listeners" == 1 ]];then	
+			# For displaying listeners
+			if [[ "$show_listeners" == 1 ]];then
 				i="0"
 					while [[ $i -le "${#playlistfull[*]}" ]]
-						do	
-							#Find listeners in the playlistfull array by matching it with the requested stream "$tr" variable.		 
-				 			[[ "${playlistfull[$i]}" == *"${tr}"* ]] && listeners="${playlistfull[$i]##* }" &&  listeners="${listeners//#listeners=/}"			 
-			     			((i++))			
+						do
+							#Find listeners in the playlistfull array by matching it with the requested stream "$tr" variable.
+				 			[[ "${playlistfull[$i]}" == *"${tr}"* ]] && listeners="${playlistfull[$i]##* }" &&  listeners="${listeners//#listeners=/}"
+			     			((i++))
 						done
-				#Get rid of trailing line from the loop.					
+				#Get rid of trailing line from the loop.
 				listeners="$(echo -en "${listeners}")"
-				
+
 				#Echo a "static" listener var to file because listeners var is empty when changing volume
 				[[ "$listeners" ]] && echo -e "$listeners" > /tmp/music_thingy/music_thingy.listeners
 			fi
-				
-			if [[ "$show_listeners" == 0 && -e /tmp/music_thingy/music_thingy.listeners ]];then			
-			    rm /tmp/music_thingy/music_thingy.listeners			
+
+			if [[ "$show_listeners" == 0 && -e /tmp/music_thingy/music_thingy.listeners ]];then
+			    rm /tmp/music_thingy/music_thingy.listeners
 			fi
 			#### /findlisteners
 			}
-			
+
 	player_start() {
-				
+
     		# Using the "#" to break the string so the 1st element in the array will just be the url
-			tr=(${pl//#/ })	
-			
+			tr=(${pl//#/ })
+
         	cleanup
         	(echo "$BASHPID" > /tmp/music_thingy/music_thingy.pid
         	source "$config"
@@ -594,9 +593,9 @@ main() {
 			# So for things like refresh, previous, add / del a tmp file works great.
 			[[ "${tr}" ]] && echo -en "${tr}" > /tmp/music_thingy/music_thingy.info
 			 }
-			 
-			 
-	#Clear the terminal			 
+
+
+	#Clear the terminal
 	tput clear
     tput civis
 	# Make the terminal black
@@ -656,7 +655,7 @@ main() {
 		 	    cleanup
 		        break
 		  else
-		  	 
+
 		  	 read -r -s -p "$(main)" -n 1
 		fi
 	done
