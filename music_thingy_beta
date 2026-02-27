@@ -577,9 +577,9 @@ main() {
 							#Find listeners in the playlistfull array by matching it with the requested stream "$pl" string.
 				 			[[ "${playlistfull[$i]}" == *"${pl}"* ]] && l="${playlistfull[$i]}" && listeners="${l##* }" && listeners="${listeners//#listeners=/}"
 			     			((i++))
-			     			break
+
 						done
-				
+				listeners="$(echo -en $listeners)"
 				#Echo a "static" listener var to file because listeners var is empty when changing volume
 				[[ "$listeners" ]] && echo -en "$listeners" > /tmp/music_thingy/music_thingy.listeners
 			fi
