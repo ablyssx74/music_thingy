@@ -560,8 +560,8 @@ fi
 [[ "$show_favorites" == 1 					   ]] &&  echo -e "   * Favorites: $(favoritesfull)"
 [[ $show_volume_levels == 1 ]] &&  echo -e " $(vol)"
 
-[[ ! "$REPLY" ]] &&  echo -e "   * Press \"s\" to start."
-[[ ! "$REPLY" ]] &&  echo -e "   * Press \"h\" for help."
+[[ "$REPLY" == start ]] &&  echo -e "   * Press \"s\" to start."
+[[ "$REPLY" == start ]] &&  echo -e "   * Press \"h\" for help."
 
 footer
 }
