@@ -138,7 +138,7 @@ fi
 }
 
 getplaylist() {
-	_curl="$(curl -s -H 'Accept: application/json' https://somafm.com/channels.json | jq  -r '.. | select(.description? and .listeners and .id? or .url?) | "_listeners_=\(.listeners) _fid_ \(.id) _fdes_ \(.description) _furl_ \(.url)"')"
+	_curl=$(curl -s -H 'Accept: application/json' https://somafm.com/channels.json | jq  -r '.. | select(.description? and .listeners and .id? or .url?) | "_listeners_=\(.listeners) _fid_ \(.id) _fdes_ \(.description) _furl_ \(.url)"')
 	_curl="${_curl// _furl_ null_fid_ null _fdes_ null _furl_ /\\n}"
 	_curl="${_curl//_fid_ null _fdes_ null _furl_ /\\n}"
 	_curl="${_curl//_listeners_=null /}"
@@ -152,18 +152,17 @@ getplaylist() {
 		i=0
 		while [[ $i -le "${#_curl[*]}" ]]
 			do
-				 listeners+="(${_curl[$i]})"
+				 listeners+=("${_curl[$i]}")
 				 [[ "${_curl[$i]}" == *"listeners="* ]] && listeners=${_curl[$i]%% *} #&&  listeners=${listeners//listeners=/}
 			 	 [[ "${_curl[$i]}" == *" - "* ]] && description="${_curl[$i]}" && description="${description//$listeners/}" && description="${description/ /}" #&& echo "$description"
-			 	 [[ "${_curl[$i]}" == *"130.pls"* ]] && echo -e "${_curl[$i]}#${description}#${listeners}"
+			 	  [[ "${_curl[$i]}" == *"130.pls"* ]] && echo -e "${_curl[$i]}#${description}#${listeners}"
 			     ((i++))
 			done
 }
 
-mapfile playlist <<< "$(getplaylist)"
-
+mapfile playlist <<< $(getplaylist)
 #Create a copy of the oringal playlist for channel total info because it gets changed when playing favorites
-mapfile playlistfull <<< "${playlist[*]}"
+mapfile playlistfull <<< ${playlist[*]}
 
 favoritesfull() {
 	mapfile fv < "$favs"
