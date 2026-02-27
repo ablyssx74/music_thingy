@@ -83,16 +83,22 @@ elif [[ ${OS_NAME} == linux ]]; then
 
 	if [[ $use_pactl_to_get_volume == 1 && $show_volume_levels = 1 ]];then
 
-  		  [[ -e "/tmp/music_thingy/music_thingy.title" ]] && foo="$(</tmp/music_thingy/music_thingy.title)"
-  		  foo2="$(pactl list sink-inputs | grep -B 25 "media.name = \"${foo} - mpv\"")"
-  		  mapfile x <<< "$foo2"
-  		  x="${x[0]}"
-  		  y="${x[10]}"
-  		  y=($y)
-  		  v="${y[4]}"
-  		  sinkID="${x//Sink\ Input\ \#/}"
-		  soundlevel=${v//%/}
-  		  inc_sound=$(($soundlevel + 1))
+		if [[ -e "/tmp/music_thingy/music_thingy.title" ]];then
+		    foo="$(</tmp/music_thingy/music_thingy.title)"
+		 	while read -r line; do
+			if [[ $line =~ Sink\ Input\ #([0-9]+) ]]; then
+				current_id="${BASH_REMATCH[1]}"
+				elif [[ "$line" == *"media.name = \"${foo} - mpv\""* ]];then
+				sinkID=${current_id}
+			fi
+			if [[ "$line" == *"Volume:"* ]];then
+				line=($line)
+				y=${line[11]}
+				soundlevel=${y//%/}
+			fi
+			done < <(pactl list sink-inputs)
+		fi
+		  inc_sound=$(($soundlevel + 1))
   		  dec_sound=$(($soundlevel - 1))
 
   		  [[ $REPLY == + ]] && pactl set-sink-input-volume $sinkID $(($soundlevel + 1))% && s=$(($soundlevel + 1))%
