@@ -8,6 +8,8 @@
 
 set -f
 shopt -s nocasematch
+
+
 [[ ! -d /tmp/music_thingy ]] && mkdir /tmp/music_thingy
 OS_NAME="$(uname -s)"
 
@@ -355,7 +357,7 @@ if [[ "$REPLY" == a ]];then
     if [[ -s "$favs" ]];then ## make sure favorites is not empty
 		tmpadd="$(</tmp/music_thingy/music_thingy.info)" ### Repeat the delete cmds so no duplicate entries
 		foo=$(< "$favs")
-		addmsg="${foo//"$tmpadd"}"
+		#addmsg="${foo//"$tmpadd"}"
 		echo "${foo//"$tmpadd"}" | sed '/^$/d' > "$favs"
 	fi
 	fav="$(</tmp/music_thingy/music_thingy.info)"
@@ -470,7 +472,7 @@ if [[ "$REPLY" == r ]];then
 			shuffle="$(shuf -i $nu -n 1)"
 			pl="${refresh[$shuffle]}"
 			findlisteners
-			shortmsg="Refreshing Playlist"
+			shortmsg="Refreshing"
 			player_start
 		fi
 fi
@@ -507,12 +509,12 @@ msg() {
 	$([[ "$tr" ]] && echo "$(tput cup 12 14)Gathering data for: ${tr}")
 	$([[ "$tr" ]] && echo "$(tput cup 13 14)Please wait...")
 	$([[ "$tmpdel" ]] && echo "$(tput cup 12 14)Deleted: ${tmpdel}")
-	$([[ "$addmsg" ]] && echo "$(tput cup 12 14)Added: ${addmsg}")
+	$([[ "$tmpadd" ]] && echo "$(tput cup 12 14)Added: ${tmpadd}")
 	$(footer)"
 }
 
-
-if [[ -n "$REPLY" && ! "$REPLY" =~ [^[:alnum:][:space:]]  && ! "$REPLY" =~ ^[0-9]$ && "$REPLY" != . ]];then
+if [[ -n $REPLY && "$REPLY" = @(s|f|a|d|p|r|af|df|fe) ]];then
+#if [[ -n "$REPLY" && ! "$REPLY" =~ [^[:alnum:][:space:]]  && ! "$REPLY" =~ ^[0-9]$ && "$REPLY" != start ]];then
 
 	while read -r -t 3 -u "${fd}" info
 		do
@@ -636,10 +638,12 @@ main() {
 
 	body
 }
+
 	# Create while loop for the main function
 	# Also set some tput colors and check if mpv and pv are installed for the script to work correctly
 	while true
-		do
+		do		
+		[[ ! $REPLY ]] && REPLY=start
 		 player="mpv"
 		 BLUE="$(tput setaf 12)"
 		 RED="$(tput setaf 9)"
@@ -663,7 +667,9 @@ main() {
 		fi
 		[[ -z "${testplayer[0]}" ]] && echo -e "${ORANGE}${player}${RED} not installed. ${BLUE}Please install it with your package manager.  :-)" && break
 		[[ -z "${testpv[0]}" ]] && echo -e "${ORANGE}pv${RED} not installed. ${BLUE}Please install it with your package manager. :-)" && break
-
+		if [[ "$REPLY" != @(start|fe|af|df|s|f|a|d|p|r|l|t|m|u|+|-|h|c|q|k|0|1|2|3|4|5|6|7|8|9) ]]; then 
+    		unset REPLY		
+		fi
 		if [[ "${REPLY}" == q ]];then
 			    tput cup "$(tput lines)" 0
 				echo -e "${ORANGE}Interactive Music Thingy${BLUE}~ $:-) Logging out!"
@@ -673,4 +679,5 @@ main() {
 
 		  	 read -r -s -p "$(main)" -n 1
 		fi
+			
 	done
