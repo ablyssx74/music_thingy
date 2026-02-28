@@ -31,8 +31,9 @@ if [[ ! $config ]];then
 									   )
 						for value in "${!_config[@]}"
 							do
-								echo "$value=${_config[$value]}" >> "$config"
+								echo "$value=${_config[$value]}" >> "$config"								
 							done
+							unset _config
 			fi
 	fi
 
@@ -53,6 +54,7 @@ if [[ ! $config ]];then
 							do
 								echo "$value=${_config[$value]}" >> "$config"
 							done
+							unset _config
 			fi
 
 	fi
@@ -384,7 +386,7 @@ if [[ "$REPLY" == l ]];then
 	listfavorites+=($(< "$favs"))
 	while [[ $i -le "${#listfavorites[*]}" ]]
 		do
-			[[ "${playlistfull[*]}" == *"${listfavorites[$i]}"* ]] && echo -en "   * ${description[$i]}"
+			[[ "${listfavorites[$i]}" ]] && echo "   * ${listfavorites[$i]}"
 		((i++))
 	done
 	echo -e "${RED}</Favorites>${BLUE}"
