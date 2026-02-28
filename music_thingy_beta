@@ -160,21 +160,24 @@ getplaylist() {
 	_curl="${_curl//_listeners_=/\\nlisteners=}"
 	_curl="${_curl//\\n/}"
 
-		mapfile -t _curl <<< "$_curl"
+		mapfile _curl <<< "$_curl"
 		i=0
 		while [[ $i -le "${#_curl[*]}" ]]
 		 do
-			 listeners+=("${_curl[$i]}")
-			[[ "${_curl[$i]}" == *"listeners="* ]] && listeners=${_curl[$i]%% *} #&&  listeners=${listeners//listeners=/}
-			[[ "${_curl[$i]}" == *" - "* ]] && description="${_curl[$i]}" && description="${description//$listeners/}" && description="${description/ /}" #&& echo "$description"
-			[[ "${_curl[$i]}" == *"130.pls"* ]] && echo -e "${_curl[$i]}#${description}#${listeners}"
+			 lis+=("${_curl[$i]}")
+			[[ "${_curl[$i]}" == *"listeners="* ]] && lis=${_curl[$i]%% *} #&&  listeners=${listeners//listeners=/}
+			[[ "${_curl[$i]}" == *" - "* ]] && description="${_curl[$i]}" && description="${description//$lis/}" && description="${description/ /}" #&& echo "$description"
+			if [[ "${_curl[$i]}" == *"130.pls"* ]];then
+			playlist+=("${_curl[$i]} #${description}#${lis}")
+			url+=("${_curl[$i]}")
+			playlistfull+=("${_curl[$i]} #${description}#${lis}")
+			description+=("${description}")
+		
+		    fi
 		  ((i++))
 		 done
 }
-
-mapfile playlist <<< $(getplaylist)
-#Create a copy of the oringal playlist for channel total info because it gets changed when playing favorites
-mapfile playlistfull <<< ${playlist[*]}
+getplaylist
 
 favoritesfull() {
 	mapfile fv < "$favs"
@@ -274,9 +277,8 @@ QUERYS(){
 while [[ $var -le $v ]]
 	do
 		if [[ $REPLY == $var ]];then
-			echo -e "  ${RED}<Config>\\n ${BLUE} * Press 0..9${RED}"
+			echo -e "${RED}<Config>\\n ${BLUE}  * Press 0..9${RED}"
 			x=${x//\"/}
-			#a="$var:${x[$var]}"
 			name="${x[$var]}"
 			c="${#name}"
 			((c--)) && ((c--))
@@ -286,7 +288,7 @@ while [[ $var -le $v ]]
 			(( 0 == value )) && cv=1
 			(( 1 == value )) && cv=0
 			
-				# Keep the screen from refreshing
+				# just want 0s and 1s
 				(( 3 == value )) && cv=3
 				(( 4 == value )) && cv=4
 				(( 5 == value )) && cv=5
@@ -323,11 +325,11 @@ while [[ $var -le $v ]]
 							ii=$((${#x3[*]} - 1))
 							while [[ $i -le $ii ]]
 								do
-								echo -en "${BLUE}  * [${i}] ${BLUE}${x3[$i]}${RED}"
+								echo -en "${BLUE}   * [${i}] ${BLUE}${x3[$i]}${RED}"
 							((i++))
 						done
 
-						echo -e "${RED}  </Config>${BLUE}"
+						echo -e "${RED}</Config>${BLUE}"
 						footer
 			exit 0
 		fi
@@ -340,24 +342,24 @@ done
 
 
 if [[ "${REPLY}" == h ]];then
-	echo -e "${BLUE}  ${RED}<Help>"
-	echo -e "${BLUE} * ${RED} [s] ${BLUE} Shuffle All"
-	echo -e "${BLUE} * ${RED} [f] ${BLUE} Shuffle Favorites"
-	echo -e "${BLUE} * ${RED} [a] ${BLUE} Add Favorite"
-	echo -e "${BLUE} * ${RED} [d] ${BLUE} Delete Favorite"
-	echo -e "${BLUE} * ${RED} [p] ${BLUE} Previous Stream"
-	echo -e "${BLUE} * ${RED} [r] ${BLUE} Refresh Current Stream"
-	echo -e "${BLUE} * ${RED} [l] ${BLUE} List Favorites"
-	echo -e "${BLUE} * ${RED} [t] ${BLUE} Show Available Channels"
-	echo -e "${BLUE} * ${RED} [m] ${BLUE} Mute"
-	echo -e "${BLUE} * ${RED} [u] ${BLUE} Unmute"
-	echo -e "${BLUE} * ${RED} [+] ${BLUE} Vol Up"
-	echo -e "${BLUE} * ${RED} [-] ${BLUE} Vol Down"
-	echo -e "${BLUE} * ${RED} [h] ${BLUE} Help Menu"
-	echo -e "${BLUE} * ${RED} [c] ${BLUE} Config Manager"
-	echo -e "${BLUE} * ${RED} [q] ${BLUE} Quit and log out of Music Thingy"
-	echo -e "${BLUE} * ${RED} [k] ${BLUE} Stop playing"
-	echo -e "${BLUE}  ${RED}</Help>${BLUE}"
+	echo -e "${RED}<Help>"
+	echo -e "${BLUE}   * ${RED} [s] ${BLUE} Shuffle All"
+	echo -e "${BLUE}   * ${RED} [f] ${BLUE} Shuffle Favorites"
+	echo -e "${BLUE}   * ${RED} [a] ${BLUE} Add Favorite"
+	echo -e "${BLUE}   * ${RED} [d] ${BLUE} Delete Favorite"
+	echo -e "${BLUE}   * ${RED} [p] ${BLUE} Previous Stream"
+	echo -e "${BLUE}   * ${RED} [r] ${BLUE} Refresh Current Stream"
+	echo -e "${BLUE}   * ${RED} [l] ${BLUE} List Favorites"
+	echo -e "${BLUE}   * ${RED} [t] ${BLUE} Show Available Channels"
+	echo -e "${BLUE}   * ${RED} [m] ${BLUE} Mute"
+	echo -e "${BLUE}   * ${RED} [u] ${BLUE} Unmute"
+	echo -e "${BLUE}   * ${RED} [+] ${BLUE} Vol Up"
+	echo -e "${BLUE}   * ${RED} [-] ${BLUE} Vol Down"
+	echo -e "${BLUE}   * ${RED} [h] ${BLUE} Help Menu"
+	echo -e "${BLUE}   * ${RED} [c] ${BLUE} Config Manager"
+	echo -e "${BLUE}   * ${RED} [q] ${BLUE} Quit and log out of Music Thingy"
+	echo -e "${BLUE}   * ${RED} [k] ${BLUE} Stop playing"
+	echo -e "${RED}</Help>${BLUE}"
 	footer
  return
 fi
@@ -366,7 +368,6 @@ if [[ "$REPLY" == a ]];then
     if [[ -s "$favs" ]];then ## make sure favorites is not empty
 		tmpadd="$(</tmp/music_thingy/music_thingy.info)" ### Repeat the delete cmds so no duplicate entries
 		foo=$(< "$favs")
-		#addmsg="${foo//"$tmpadd"}"
 		echo "${foo//"$tmpadd"}" | sed '/^$/d' > "$favs"
 	fi
 	fav="$(</tmp/music_thingy/music_thingy.info)"
@@ -378,8 +379,15 @@ if [[ "$REPLY" == a ]];then
 fi
 
 if [[ "$REPLY" == l ]];then
-	echo -e "${BLUE}  ${RED}<Favorites>\\n${BLUE}$(< "$favs")"
-	echo -e "${BLUE}  ${RED}</Favorites>${BLUE}"
+	echo -e "${RED}<Favorites>${BLUE}"
+	i="0"
+	listfavorites+=($(< "$favs"))
+	while [[ $i -le "${#listfavorites[*]}" ]]
+		do
+			[[ "${playlistfull[*]}" == *"${listfavorites[$i]}"* ]] && echo -en "   * ${description[$i]}"
+		((i++))
+	done
+	echo -e "${RED}</Favorites>${BLUE}"
 	footer
 	return
 fi
@@ -399,7 +407,7 @@ if [[ "$REPLY" == k ]];then
 fi
 
 if [[ "${REPLY}" == c ]];then
-	echo -e "  ${RED}<Config>\\n ${BLUE} * Press 0..9${RED}"
+	echo -e "${RED}<Config>\\n ${BLUE}  * Press 0..9${RED}"
 	mapfile x < "$ConfigDir/config"
 		i=0
 	    ii="$((${#x[*]} - 1))"
@@ -407,17 +415,25 @@ if [[ "${REPLY}" == c ]];then
 		 do
 		    x="${x[$i]}"
 		    
-			echo -ne "${BLUE}  * ${RED}${BLUE}[${i}] ${x//\"/}"
+			echo -ne "${BLUE}   * ${RED}${BLUE}[${i}] ${x//\"/}"
 			((i++))
 		done
-	echo -e "${RED}  </Config>${BLUE}"
+	echo -e "${RED}</Config>${BLUE}"
 
 	footer
  return
 fi
 
 if [[ "$REPLY" == t ]];then
-echo "${playlistfull[*]}"
+echo "${RED}<Playlist>"
+i=0
+while [[ $i -le ${#description[*]} ]]
+	do
+		[[ "${description[$i]}" ]] && echo -n "${BLUE}   * ${description[$i]}"
+		((i++))
+	done
+echo -n "${RED}</Playlist>"
+footer
 return
 fi
 
@@ -500,7 +516,7 @@ QUERYS
 
 dofortune() {
     # Added a tput function for fortune
-    # This helps message, albeit a rather quick one display nicely.
+    # This helps long fortunes, albeit it's rather quick to display.
 	mapfile df <<< "$(fortune)"
 	i="0"
 	c="11"
@@ -552,7 +568,7 @@ if [[ -n $REPLY && "$REPLY" = @(s|f|a|d|p|r|af|df|fe) ]];then
 			fi
 
 					# We really don't wont too see the pv data, just our custom msg
-					# We try to hide it with tput 0 0
+					# We try to hide it with tput 0 0 and font black
 		done | pv -N "$(msg)$(tput cup 0 0)$(tput setaf 0)" -F "%N"
 fi
 
@@ -586,11 +602,13 @@ main() {
 				i="0"
 					while [[ $i -le "${#playlistfull[*]}" ]]
 						do
-							#Find listeners in the playlistfull array by matching it with the requested stream "$pl" string.
-				 			[[ "${playlistfull[$i]}" == *"${pl}"* ]] && l="${playlistfull[$i]}" && listeners="${l##* }" && listeners="${listeners//#listeners=/}"
+							# Find listeners in the playlistfull array by matching it with the requested stream "$pl" string.
+							# Pass $url instead of playlistfull to match playlist in favorites as well as default playlistfull
+				 			[[ "${url[$i]}" == *"${pl%% *}"* ]] && l="${playlistfull[$i]}" && listeners="${l##* }" && listeners="${listeners//#listeners=/}"
 			     			((i++))
 
 						done
+				
 				listeners="$(echo -en $listeners)"
 				#Echo a "static" listener var to file because listeners var is empty when changing volume
 				[[ "$listeners" ]] && echo -en "$listeners" > /tmp/music_thingy/music_thingy.listeners
