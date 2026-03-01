@@ -152,15 +152,15 @@ fi
 
 getplaylist() {
 	_curl=$(curl -s -H 'Accept: application/json' https://somafm.com/channels.json \
-    | jq  -r '.. | select(.description? and .listeners and .id? or .url?) | "_listeners_=\(.listeners) _fid_ \(.id) _fdes_ \(.description) _furl_ \(.url)"')
-	_curl="${_curl// _furl_ null_fid_ null _fdes_ null _furl_ /\\n}"
-	_curl="${_curl//_fid_ null _fdes_ null _furl_ /\\n}"
-	_curl="${_curl//_listeners_=null /}"
+    | jq  -r '.. | select(.description? and .listeners and .id? or .url?) | "listeners=\(.listeners) _fid_ \(.id) _fdes_ \(.description) _furl_ \(.url)"')
+	_curl="${_curl// _furl_ null_fid_ null _fdes_ null _furl_ /}"
+	_curl="${_curl//_fid_ null _fdes_ null _furl_ /}"
+	_curl="${_curl//listeners=null /}"
 	_curl="${_curl//_furl_ null/}"
-	_curl="${_curl// _fid_ /\\n }"
+	_curl="${_curl// _fid_ / }"
 	_curl="${_curl// _fdes_ / - }"
-	_curl="${_curl//_listeners_=/\\nlisteners=}"
-	_curl="${_curl//\\n/}"
+	#_curl="${_curl//listeners_=/listeners=}"
+	#_curl="${_curl//\\n/}"
 
 		mapfile _curl <<< "$_curl"
 		i=0
