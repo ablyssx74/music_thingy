@@ -11,6 +11,8 @@
 set -f
 shopt -s nocasematch
 
+# Do nothing if not executed from terminal
+[[ ! -t 0 ]] && echo "Error: script must be executed from terminal." &&  exit 1
 
 [[ ! -d /tmp/music_thingy ]] && mkdir /tmp/music_thingy
 OS_NAME="$(uname -s)"
@@ -637,11 +639,18 @@ main() {
 			}
 
 	player_start() {
-
     		# Using the "#" to break the string so the 1st element in the array will just be the url
 			tr=(${pl//#/ })
 
         	cleanup
+
+ 			## Make a tmp file descriptor Thanks chatgpt!
+			data="$(mktemp -u)"
+			mkfifo "$data"
+			exec {fd}<>"$data"
+			rm "$data"
+
+
         	(echo "$BASHPID" > /tmp/music_thingy/music_thingy.pid
         	source "$config"
         	[[ "$debug_disable_player" == 1 ]] && return 0
@@ -671,11 +680,7 @@ main() {
 
 	logo
 
-	## Make a tmp file descriptor Thanks chatgpt!
-	data="$(mktemp -u)"
-	mkfifo "$data"
-	exec {fd}<>"$data"
-	rm "$data"
+
 
 	# Set the body location with tput
 	echo "$(tput cup 10 0)${BLUE}"
