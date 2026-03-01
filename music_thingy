@@ -174,7 +174,6 @@ getplaylist() {
 			url+=("${_curl[$i]}")
 			playlistfull+=("${_curl[$i]} #${description}#${lis}")
 			description+=("${description}")
-		
 		    fi
 		  ((i++))
 		 done
@@ -439,11 +438,15 @@ fi
 
 if [[ "$REPLY" == t ]];then
 echo "${RED}<Playlist>"
-i=0
+i=1
+ii=0
 while [[ $i -le ${#description[*]} ]]
 	do
-		[[ "${description[$i]}" ]] && echo -n "${BLUE}   * ${description[$i]}"
+	d=$(echo "${description[$i]}")
+	u=$(echo "${url[$ii]}")
+	[[ "${description[$i]}" ]] && echo "${BLUE}   * $i) ${d}- ${u}"
 		((i++))
+		((ii++))
 	done
 echo -n "${RED}</Playlist>"
 footer
