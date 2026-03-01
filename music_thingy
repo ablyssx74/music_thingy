@@ -202,16 +202,22 @@ if [[ "$1" ]];then
         if [[ "${1}" == favorites ]]; then
      	   cleanup
      	   echo "$BASHPID" > /tmp/music_thingy/music_thingy.pid
+			   $notify "
+Shuffling Favorites."
      	   REPLY="f"
         fi
 
 	    if [[ "${1}" == inc_vol ]]; then
+			   $notify "
+Increasing Volume."
         	 REPLY="+"
         	 vol
         	 exit
 	  	fi
 
 	    if [[ "${1}" == dec_vol ]]; then
+			   $notify "
+Decreasing Volume."
         	 REPLY="-"
         	 vol
         	 exit
@@ -227,7 +233,6 @@ if [[ "$1" ]];then
 			   $notify "${fav//\\n */}
 Added to favorites."
 			 fi
-
    		 exit
 		fi
 
@@ -254,10 +259,14 @@ Deleted from favorites."
 	if [[ "${1}" == shuffle ]]; then
        	   cleanup
      	   echo "$BASHPID" > /tmp/music_thingy/music_thingy.pid
+			   $notify "
+Shuffling Playlist."
      	   REPLY=s
 	fi
 
 	if [[ "${1}" == quit ]]; then
+			   $notify "
+Stopping Music Thingy."
         	cleanup
 			exit 0
 	fi
