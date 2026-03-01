@@ -383,12 +383,14 @@ fi
 if [[ "$REPLY" == l ]];then
 	echo -e "${RED}<Favorites>${BLUE}"
 	i="0"
-	listfavorites+=($(< "$favs"))
+	mapfile listfavorites <<< $(<"$favs")
+	
+	#echo "${listfavorites[*]}"
 	while [[ $i -le "${#listfavorites[*]}" ]]
 		do
-			[[ "${listfavorites[$i]}" ]] && echo "   * ${listfavorites[$i]}"
-		((i++))
-	done
+			[[ "${listfavorites[$i]}" ]] && echo -en "   * ${listfavorites[$i]}" #&& l="${playlistfull[$i]}" && listeners="${l##* }" && listeners="${listeners//#listeners=/}"
+   			((i++))
+		done
 	echo -e "${RED}</Favorites>${BLUE}"
 	footer
 	return
@@ -602,7 +604,7 @@ main() {
 			# For displaying listeners
 			if [[ "$show_listeners" == 1 ]];then
 				i="0"
-					while [[ $i -le "${#playlistfull[*]}" ]]
+					while [[ $i -le "${#url[*]}" ]]
 						do
 							# Find listeners in the playlistfull array by matching it with the requested stream "$pl" string.
 							# Pass $url instead of playlistfull to match playlist in favorites as well as default playlistfull
