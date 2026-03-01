@@ -3,5 +3,5 @@
 - Add, del fovarite streams, control master volume.
 - Uses mpv as the backend.
 
-[Screenhot Linux](https://github.com/ablyssx74/music_thingy/blob/main/screenshot_linux.png)
 
+<img width="741" height="563" alt="screenshot_linux" src="https://github.com/user-attachments/assets/c9ee916c-5398-4fbb-b614-f928afb46206" />
