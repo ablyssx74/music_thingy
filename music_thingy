@@ -649,14 +649,6 @@ main() {
 			tr=(${pl//#/ })
 
         	cleanup
-
- 			## Make a tmp file descriptor Thanks chatgpt!
-			data="$(mktemp -u)"
-			mkfifo "$data"
-			exec {fd}<>"$data"
-			rm "$data"
-
-
         	(echo "$BASHPID" > /tmp/music_thingy/music_thingy.pid
         	source "$config"
         	[[ "$debug_disable_player" == 1 ]] && return 0
@@ -670,6 +662,11 @@ main() {
 			[[ "${tr}" ]] && echo -en "${tr}" > /tmp/music_thingy/music_thingy.info
 			 }
 
+## Make a tmp file descriptor Thanks chatgpt!
+data="$(mktemp -u)"
+mkfifo "$data"
+exec {fd}<>"$data"
+rm "$data"
 
 	#Clear the terminal
 	tput clear
