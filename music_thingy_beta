@@ -199,7 +199,7 @@ getplaylist() {
 		 	var="xplaylistdata_${cn}=(${curl[$i]}"
 		 	((i++))
 		 	var2="${curl[$i]})"
-		 	playlisttotal+=($var2)
+		 	playlisttotal+=("$var2")
 		 	[[ -n ${curl[$i]} ]] && declare -A "${var} ${var2}"
 		 	#[[ -n ${curl[$i]} ]] && echo "declare -A \"${var} ${var2}\""
 			 		 	
@@ -223,7 +223,7 @@ getplaylist() {
 							lastPlaying="${current_playlist[lastPlaying]}"		
 							
 							if [[ $REPLY == ta ]];then
-								
+
 								cn=0
 								cp=1
 								while [[ $cn -le $channeltotal ]];
@@ -231,15 +231,15 @@ getplaylist() {
 								 		declare -n current_playlist="xplaylistdata_${cn}"
 										#for value in "${!current_playlist[@]}"
 										#	do
-											echo "${BLUE}  * $cn  ${current_playlist[description]} - ${current_playlist[url]}" 
+											echo "${BLUE}  * $cn  ${current_playlist[description]} - ${current_playlist[url]}"
 										#	done
-											
+
 									((cn++))
 									((cp++))
 								done
 								echo -n "${RED}</Playlist>"
 								#footer
-							fi			
+							fi
  
 }
 #getplaylist
@@ -630,7 +630,7 @@ msg() {
 if [[ -n $REPLY && "$REPLY" = @(s|f|a|d|p|r|af|df|fe) ]];then
 #if [[ -n "$REPLY" && ! "$REPLY" =~ [^[:alnum:][:space:]]  && ! "$REPLY" =~ ^[0-9]$ && "$REPLY" != start ]];then
 
-	while read -r -t .5 -u "${fd}" info
+	while read -r -t 1 -u "${fd}" info
 	 #while read -r - info
 		do
 			#if [[ "$info" == icy-title* ]];then
@@ -638,21 +638,21 @@ if [[ -n $REPLY && "$REPLY" = @(s|f|a|d|p|r|af|df|fe) ]];then
 					#title="${info//icy-title: /}"
 					# Echoing to tmp is needed here because the var won't be set after the file descriptor is read.
 					# You can test this by enabling the echo and changing the volume with +/- keys
-					[[ ! -s /tmp/music_thingy/music_thingy.title ]] &&  echo -en "$title" > /tmp/music_thingy/music_thingy.title
+					[[ ! -s /tmp/music_thingy/music_thingy.title ]] &&  echo -en "$lastPlaying" > /tmp/music_thingy/music_thingy.title
 					#disabled echo -e "   *${title}"
 			#fi
 
 			#if [[ "$info" =~ icy-name: ]];then
 					#[[ -e /tmp/music_thingy/music_thingy.name ]] && rm /tmp/music_thingy/music_thingy.name
 					#name="${info/icy-name: /}"
-					echo -en "$description" > /tmp/music_thingy/music_thingy.name
+					[[ ! -s /tmp/music_thingy/music_thingy.name ]] && echo -en "$description" > /tmp/music_thingy/music_thingy.name
 					#disabled echo -e "   *${name}"
 			#fi
 
 			#if [[ "$info" =~ icy-genre: ]];then
 					#[[ -e /tmp/music_thingy/music_thingy.genre ]] && rm /tmp/music_thingy/music_thingy.genre
 					#genre="${info/icy-genre: /}"
-					echo -en "$genre"> /tmp/music_thingy/music_thingy.genre
+					[[ ! -s /tmp/music_thingy/music_thingy.genre ]] && echo -en "$genre"> /tmp/music_thingy/music_thingy.genre
 					#disabledecho -e "   *${genre}"
 			#fi
 
