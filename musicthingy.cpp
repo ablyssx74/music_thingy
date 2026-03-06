@@ -8,11 +8,58 @@
 #include <mpv/client.h>
 #include "nlohmann/json.hpp"
 #include <poll.h> 
-#include <csignal> // Added for signal handling
+#include <csignal> 
 #include <fstream>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <ctime>
+#include <unistd.h>
+#include <image.h>
+#include <OS.h>
+#include <limits.h> 
+
+#include <limits.h> // For PATH_MAX on Linux
+
+// --- OS Path Helper ---
+std::string get_self_path() {
+    char buffer[PATH_MAX];
+#ifdef __HAIKU__
+    image_info info;
+    int32 cookie = 0;
+    while (get_next_image_info(0, &cookie, &info) == B_OK) {
+        if (info.type == B_APP_IMAGE) return std::string(info.name);
+    }
+#else
+    // Linux/Unix 
+    ssize_t count = readlink("/proc/self/exe", buffer, PATH_MAX);
+    if (count > 0) return std::string(buffer, count);
+#endif
+    return "";
+}
+
+// --- Linux Terminal Searcher (Only compiles on Linux) ---
+#ifndef __HAIKU__
+std::string get_linux_terminal_cmd(const std::string& path) {
+    struct Term { std::string name; std::string flag; };
+    std::vector<Term> terms = {
+        {"x-terminal-emulator", "-e"},
+        {"konsole", "-e"},
+        {"gnome-terminal", "--"}, 
+        {"xfce4-terminal", "-e"},
+        {"xterm", "-e"}
+    };
+
+    for (const auto& t : terms) {
+        if (system(("command -v " + t.name + " >/dev/null 2>&1").c_str()) == 0) {
+            return t.name + " " + t.flag + " \"" + path + "\" &";
+        }
+    }
+    return "";
+}
+#endif
+
+
+
 
 std::string statusMsg = "";
 std::time_t statusExpiry = 0;
@@ -32,11 +79,10 @@ mpv_handle *mpv = nullptr;
 std::vector<Channel> channels;
 volatile sig_atomic_t resized = 0; // Flag for resize signal
 
-// Initial State (wrapped in Blue codes)
-std::string currentStation = "None";
 std::string currentSong = "None";
 std::string currentDesc = "None";
-std::string currentListeners = "0";
+std::string currentStation = "Press [s] to shuffle!";
+std::string currentListeners = "";
 
 // --- Helper Functions ---
 void handle_resize(int sig) { resized = 1; }
@@ -147,6 +193,19 @@ for(const auto& ch : channels) {
     return false;
 }
 
+std::string get_vol_bar() {
+    double vol;
+    mpv_get_property(mpv, "volume", MPV_FORMAT_DOUBLE, &vol);
+    int filled = (int)(vol / 10);
+    std::string bar = "[";
+    for (int i = 0; i < 10; ++i) {
+        if (i < filled) bar += "|";
+        else bar += ".";
+    }
+    bar += "]";
+    return bar;
+}
+
 
 void draw_ui() {
     struct winsize w; ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
@@ -155,7 +214,7 @@ void draw_ui() {
     std::cout << "\033[H\033[2J\033[3J"; // Full Clear
     
     // Top Info
-    std::cout << "\033[" << (w.ws_row - 12) << ";10H" << BLUE << "                             Music Thingy" << RESET;
+    std::cout << "\033[" << (w.ws_row - 12) << ";10H" << BLUE << "                                 Music Thingy" << RESET;
     std::cout << "\033[" << (w.ws_row - 11) << ";10H" << BLUE << "[S]huffle | S[a]ve | Add [F]avorite | [D]elete Favorite | Vol [+/-] [M]ute | [Q]uit" << RESET;
   
      if (std::time(nullptr) < statusExpiry) {
@@ -167,8 +226,15 @@ void draw_ui() {
     }
   
     // Content Block (relative to bottom)
+    // Only print the Song line if there is actual metadata
+	if (!currentSong.empty() && currentSong != "None" && currentSong != "\033[94mNone\033[0m") {
     std::cout << "\033[" << (w.ws_row - 7) << ";10H" << BLUE << " * " << currentSong << RESET;
+}
+// Only print the Song line if there is actual metadata
+if (!currentDesc.empty() && currentDesc != "None" && currentDesc != "\033[94mNone\033[0m") {
     std::cout << "\033[" << (w.ws_row - 6) << ";10H" << BLUE << " * " << currentDesc << RESET;
+}
+
      // Station Line with Dynamic Favorite Tag
     std::cout << "\033[" << (w.ws_row - 5) << ";10H" << BLUE << " * " << currentStation;
       if (is_favorite()) {
@@ -181,6 +247,12 @@ void draw_ui() {
   // Stats Line: Shows Favs / Total
     std::cout << "\033[" << (w.ws_row - 4) << ";10H" << BLUE  << " * Favorites: " << count_favorites() << RESET;
     std::cout << "\033[" << (w.ws_row - 3) << ";10H" << BLUE  << " * Total Channels: " << channels.size() << RESET;
+    
+    int mute;
+    mpv_get_property(mpv, "mute", MPV_FORMAT_FLAG, &mute);
+    std::string volColor = mute ? "\033[91m" : "\033[92m"; // Red if muted, Green if not
+              
+    std::cout << "\033[" << (w.ws_row - 2) << ";10H" << BLUE  << " * Vol: " << volColor << get_vol_bar() << RESET << std::flush;
      
     // Prompt at the very bottom
     std::cout << "\033[" << w.ws_row << ";0H" << RED << "MusicThingy> " << RESET << std::flush;
@@ -315,8 +387,21 @@ for(const auto& ch : channels) {
 
 
 // --- Main Engine ---
-int main() {
+int main(int argc, char* argv[]) {
+    if (!isatty(STDOUT_FILENO)) {
+        std::string path = get_self_path();
+        std::string cmd;
 
+#ifdef __HAIKU__
+        cmd = "Terminal \"" + path + "\" &";
+#else
+        // Linux: x-terminal-emulator is the standard wrapper
+        cmd = "x-terminal-emulator -e \"" + path + "\" &";
+#endif
+
+        if (!path.empty()) system(cmd.c_str());
+        return 0; 
+    }
 
     srand(time(0));
     signal(SIGWINCH, handle_resize); // Listen for window resize

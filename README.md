@@ -2,7 +2,8 @@
 - a c++ terminal app to play random music from somafm.com 
 
 # Build
-Building requires libcurl and libmpv
+Build requires libcurl and libmpv
 ```shell
-g++ ./musicthingy.cpp -o musicthingy -lcurl -lmpv
+Haiku: g++ ./musicthingy.cpp -o musicthingy -lcurl -lmpv -lbe
+Linux: g++ ./musicthingy.cpp -o musicthingy -lcurl -lmpv -lbe
 ```
