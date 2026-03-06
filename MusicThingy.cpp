@@ -46,6 +46,11 @@ const std::string BASE_URL = "https://somafm.com/";
 
 using json = nlohmann::json;
 
+int selectedFav = 0;
+int scrollOffset = 0;
+bool showMenu = false;
+
+
 // --- Global State ---
 struct Channel {
     std::string title;
@@ -193,6 +198,85 @@ std::string get_vol_bar() {
     return bar;
 }
 
+void update_metadata_from_url(const std::string& url) {
+    for (const auto& ch : channels) {
+        // Match the channel ID within the URL string
+        if (url.find(ch.id) != std::string::npos) {
+            currentStation = ch.title;
+            currentDesc = ch.desc;
+            currentListeners = ch.listeners;
+            currentSong = "Loading Favorite...";
+            break;
+
+        }
+    }
+}
+
+
+void draw_favorites_menu() {
+    struct winsize w; ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    std::string BLUE = "\033[94m", WHITE = "\033[97m", RESET = "\033[0m";
+    std::stringstream buffer;
+
+    // Load favorites from file
+    std::string home = getenv("HOME") ? getenv("HOME") : ".";
+    #ifdef __HAIKU__
+    std::ifstream infile(home + "/config/settings/MusicThingy/favorites.txt");
+    #else
+    std::ifstream infile(home + "/.config/MusicThingy/favorites.txt");
+    #endif
+
+    std::vector<std::string> favUrls;
+    std::string line;
+    while (std::getline(infile, line)) if (!line.empty()) favUrls.push_back(line);
+
+    buffer << "\033[H\033[2J\033[3J" << BLUE;
+    buffer << "\033[5;10H=== FAVORITES (Use [j/k] to scroll, [Enter] to play, [q] to back) ===";
+
+    int maxVisible = 10; // How many favorites to show at once
+    if (favUrls.empty()) {
+        buffer << "\033[7;10H  (No favorites saved yet)";
+    } else {
+        // Adjust scroll offset to keep selection in view
+        if (selectedFav < scrollOffset) scrollOffset = selectedFav;
+        if (selectedFav >= scrollOffset + maxVisible) scrollOffset = selectedFav - maxVisible + 1;
+
+        for (int i = 0; i < maxVisible && (i + scrollOffset) < favUrls.size(); ++i) {
+            int idx = i + scrollOffset;
+            buffer << "\033[" << (7 + i) << ";10H";
+
+            if (idx == selectedFav) buffer << WHITE << " > " << favUrls[idx] << BLUE;
+            else buffer << "   " << favUrls[idx];
+        }
+    }
+
+    buffer << RESET;
+    std::cout << buffer.str() << std::flush;
+
+    // Local Input Handling for the Menu
+    if (kbhit()) {
+        char c = getchar();
+        if (c == 'b' || c == 27) showMenu = false;
+        if (c == 'k' && selectedFav > 0) selectedFav--;
+        if (c == 'j' && selectedFav < (int)favUrls.size() - 1) selectedFav++;
+
+        // Check for both Newline and Carriage Return
+        if ((c == '\n' || c == '\r') && !favUrls.empty()) {
+            const char *cmd[] = {"loadfile", favUrls[selectedFav].c_str(), NULL};
+
+            // Execute and capture any immediate error
+            if (mpv_command(mpv, cmd) < 0) {
+                statusMsg = "Error: Could not load file.";
+                statusExpiry = std::time(nullptr) + 2;
+            } else {
+                // Update local metadata state immediately
+                update_metadata_from_url(favUrls[selectedFav]);
+                showMenu = false;
+            }
+        }
+    }
+}
+
 //[\033[31mF\033[33ma\033[32mv\033[36mo\033[34m\033[35mr\033[31mi\033[33mt\033[32me\033[94m]
 
 void draw_ui() {
@@ -207,7 +291,7 @@ void draw_ui() {
     buffer << BLUE; // Set the color to BLUE for everything following
 
     buffer << "\033[" << (w.ws_row - 21) << ";10H"  "                                Music Thingy" << "\n";
-    buffer << "\033[" << (w.ws_row - 20) << ";10H" << "[S]huffle | [F]av Play | [A]dd Fav | [D]el Fav | Vol [+/-] [M]ute | [Q]uit" << "\n";
+    buffer << "\033[" << (w.ws_row - 20) << ";10H" << "[S]huffle | [F]av Play | [L]ist Favs | [A]dd Fav | [D]el Fav | Vol [+/-] [M]ute | [Q]uit" << "\n";
 
     if (std::time(nullptr) < statusExpiry) {
         buffer << "\033[" << (w.ws_row - 16) << ";10H" << GREEN << ">> " << statusMsg << "\n" << RESET << BLUE ;
@@ -233,6 +317,52 @@ void draw_ui() {
     buffer << RESET;
     // ONE SINGLE WRITE to the physical screen (The 'Swap')
     std::cout << buffer.str() << std::flush;
+}
+
+void list_favorites() {
+    std::string home = getenv("HOME") ? getenv("HOME") : ".";
+    #ifdef __HAIKU__
+    std::string path = home + "/config/settings/MusicThingy/favorites.txt";
+    #else
+    std::string path = home + "/.config/MusicThingy/favorites.txt";
+    #endif
+
+    std::ifstream infile(path);
+    if (!infile.is_open()) {
+        statusMsg = "No favorites file found.";
+        statusExpiry = std::time(nullptr) + 3;
+        return;
+    }
+
+    std::string line;
+    std::string listStr = "Favorites: ";
+    bool first = true;
+
+    while (std::getline(infile, line)) {
+        if (line.empty()) continue;
+
+        // Extract the ID from the URL (e.g., "groovesalad" from ".../groovesalad.pls")
+        size_t lastSlash = line.find_last_of('/');
+        size_t lastDot = line.find_last_of('.');
+        if (lastSlash != std::string::npos && lastDot != std::string::npos) {
+            std::string id = line.substr(lastSlash + 1, lastDot - lastSlash - 1);
+
+            // Find the human-readable title from your channels vector
+            for (const auto& ch : channels) {
+                if (ch.id == id) {
+                    if (!first) listStr += ", ";
+                    listStr += ch.title;
+                    first = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (first) statusMsg = "Your favorites list is empty.";
+    else statusMsg = listStr;
+
+    statusExpiry = std::time(nullptr) + 10; // Show for 10 seconds
 }
 
 
@@ -439,6 +569,12 @@ int main(int argc, char* argv[]) {
     draw_ui();
 
     while (true) {
+        if (showMenu) {
+            draw_favorites_menu();
+            usleep(20000);
+            continue; // Skip the regular UI while menu is open
+        }
+
         bool needsRedraw = false;
 
         // Auto-clear status message after timeout
@@ -469,6 +605,7 @@ int main(int argc, char* argv[]) {
             char input = getchar();
             if (input == 'q') break;
             switch (input) {
+                case 'l': showMenu = true; selectedFav = 0; break;
                 case 's': play_random(); currentSong = "Buffering..."; break;
                 case 'a': save_favorite(); break;
                 case 'f': play_favorite(); break;
@@ -478,8 +615,11 @@ int main(int argc, char* argv[]) {
             }
             needsRedraw = true;
         }
-        if (needsRedraw) draw_ui();
-        usleep(10000);
+        if (needsRedraw || resized) {
+            resized = 0;
+            draw_ui();
+        }
+        usleep(20000);
     }
 
     end:
