@@ -1,0 +1,6 @@
+resource(1, "BEOS:APP_SIG") "application/x-vnd.MusicThingy";
+resource icon("BEOS:ICON") {
+    // You get this block of $ "..." hex code by
+    // exporting from Icon-O-Matic as "RDEF Resource"
+    $"0401..."
+};
