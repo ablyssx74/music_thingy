@@ -16,6 +16,7 @@
 
 std::string statusMsg = "";
 std::time_t statusExpiry = 0;
+const std::string BASE_URL = "https://somafm.com/";
 
 using json = nlohmann::json;
 
@@ -56,7 +57,7 @@ void fetch_channels() {
     CURL* curl = curl_easy_init();
     std::string buffer;
     if(curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, "https://somafm.com/channels.json");
+        curl_easy_setopt(curl, CURLOPT_URL, (BASE_URL + "channels.json").c_str());
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
         curl_easy_setopt(curl, CURLOPT_USERAGENT, "MusicThingy/1.0");
@@ -93,7 +94,8 @@ void play_random() {
     currentDesc = channels[idx].desc;
     currentListeners = channels[idx].listeners;
     
-    std::string url = "https://somafm.com/" + channels[idx].id + ".pls";
+    // In play_random and play_favorite
+	std::string url = BASE_URL + channels[idx].id + ".pls";
     const char *cmd[] = {"loadfile", url.c_str(), NULL};
     mpv_command(mpv, cmd);
 }
@@ -123,15 +125,42 @@ int count_favorites() {
     return lines;
 }
 
+bool is_favorite() {
+    std::string home = getenv("HOME") ? getenv("HOME") : ".";
+    std::ifstream infile(home + "/.config/MusicThingy/favorites.txt");
+    
+
+std::string currentUrl = "";
+for(const auto& ch : channels) {
+    if(ch.title == currentStation) { 
+        currentUrl = BASE_URL + ch.id + ".pls"; 
+        break; 
+    }
+}
+
+    if (currentUrl.empty()) return false;
+
+    std::string line;
+    while (std::getline(infile, line)) {
+        if (line == currentUrl) return true;
+    }
+    return false;
+}
+
+
 void draw_ui() {
     struct winsize w; ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-    std::string BLUE = "\033[94m", RED = "\033[91m", RESET = "\033[0m";
-    
+    std::string BLUE = "\033[94m", RED = "\033[91m", YELLOW = "\033[33m", GREEN = "\033[38;5;46m", RESET = "\033[0m";
+
     std::cout << "\033[H\033[2J\033[3J"; // Full Clear
     
     // Top Info
     std::cout << "\033[" << (w.ws_row - 12) << ";10H" << BLUE << "                             Music Thingy" << RESET;
-    std::cout << "\033[" << (w.ws_row - 11) << ";10H" << BLUE << "[S]huffle S[a]ve Add [F]avorite [D]elete Favorite [+/-] Vol [M]ute [Q]uit" << RESET;
+    std::cout << "\033[" << (w.ws_row - 11) << ";10H" << BLUE << "[S]huffle | S[a]ve | Add [F]avorite | [D]elete Favorite | Vol [+/-] [M]ute | [Q]uit" << RESET;
+  
+     if (std::time(nullptr) < statusExpiry) {
+        std::cout << "\033[" << (w.ws_row - 9) << ";10H" << GREEN << ">> " << statusMsg << RESET;
+    }
   
     if (std::time(nullptr) < statusExpiry) {
         std::cout << "\033[" << (w.ws_row - 9) << ";10H" << BLUE << ">> " << statusMsg << RESET;
@@ -140,9 +169,14 @@ void draw_ui() {
     // Content Block (relative to bottom)
     std::cout << "\033[" << (w.ws_row - 7) << ";10H" << BLUE << " * " << currentSong << RESET;
     std::cout << "\033[" << (w.ws_row - 6) << ";10H" << BLUE << " * " << currentDesc << RESET;
+     // Station Line with Dynamic Favorite Tag
     std::cout << "\033[" << (w.ws_row - 5) << ";10H" << BLUE << " * " << currentStation;
+      if (is_favorite()) {
+        std::cout << BLUE << " [ \033[31mF\033[33ma\033[32mv\033[36mo\033[34m\033[35mr\033[31mi\033[33mt\033[32me\033[94m ]" << RESET; 
+    }
+  
     if(!currentListeners.empty()) 
-        std::cout << " (" << currentListeners << " listeners)" << RESET;
+        std::cout << BLUE << " (" << currentListeners << " listeners)" << RESET;
     
   // Stats Line: Shows Favs / Total
     std::cout << "\033[" << (w.ws_row - 4) << ";10H" << BLUE  << " * Favorites: " << count_favorites() << RESET;
@@ -159,13 +193,14 @@ void save_favorite() {
     mkdir(dir.c_str(), 0755);
 
     // 1. Determine the URL for the current station
-    std::string currentUrl = "";
-    for(const auto& ch : channels) {
-        if(ch.title == currentStation) { 
-            currentUrl = "https://somafm.com/" + ch.id + ".pls"; 
-            break; 
-        }
+std::string currentUrl = "";
+for(const auto& ch : channels) {
+    if(ch.title == currentStation) { 
+        currentUrl = BASE_URL + ch.id + ".pls"; 
+        break; 
     }
+}
+
 
     if (currentUrl.empty()) {
         statusMsg = "Cannot save: No station selected.";
@@ -245,13 +280,15 @@ void delete_favorite() {
     std::string home = getenv("HOME") ? getenv("HOME") : ".";
     std::string path = home + "/.config/MusicThingy/favorites.txt";
     
-    std::string currentUrl = "";
-    for(const auto& ch : channels) {
-        if(ch.title == currentStation) { 
-            currentUrl = "https://somafm.com/" + ch.id + ".pls"; 
-            break; 
-        }
+
+std::string currentUrl = "";
+for(const auto& ch : channels) {
+    if(ch.title == currentStation) { 
+        currentUrl = BASE_URL + ch.id + ".pls"; 
+        break; 
     }
+}
+
 
     if (currentUrl.empty()) return;
 
