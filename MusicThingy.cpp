@@ -21,6 +21,31 @@
 #include <sstream>
 #include <fcntl.h>
 
+// --- Global UI Colors ---
+const std::string BLUE   = "\033[94m";
+const std::string RED    = "\033[91m";
+const std::string ORANGE = "\033[93m";
+const std::string WHITE  = "\033[97m";
+const std::string YELLOW = "\033[33m";
+const std::string GREEN  = "\033[38;5;46m";
+const std::string RESET  = "\033[0m";
+
+std::string get_ui_header(int rows) {
+    std::stringstream header;
+    header << "\033[H\033[2J\033[3J" << BLUE; // <--- FULL CLEAR then BLUE
+    header << "\033[" << (rows - 21) << ";10H" << "             Music Thingy\n";
+    header << "\033[" << (rows - 20) << ";10H" << "[S]huffle | Vol [+/-] | [H]elp | [Q]uit\n";
+    return header.str();
+}
+
+std::string get_ui_footer(int rows) {
+    std::stringstream footer;
+    struct winsize w; ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    footer << "\033[" << w.ws_row << ";0H" << RED << "Music Thingy~ $: ";
+    return footer.str();
+}
+
+
 
 
 
@@ -307,14 +332,14 @@ std::string get_vol_bar() {
 
 bool draw_help_menu() {
     struct winsize w; ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-    std::string BLUE = "\033[94m", RESET = "\033[0m";
+
     std::stringstream buffer;
 
-    buffer << "\033[H\033[2J\033[3J" << BLUE;
-    buffer << "\033[6;10H             Music Thingy";
-    buffer << "\033[7;10H[S]huffle | Vol [+/-] | [H]elp | [Q]uit";
+    buffer << get_ui_header(w.ws_row);
 
-    int r = 11; // Start row for shortcuts
+    buffer << "\033[6;10H               [b] Back";
+
+    int r = 10; // Start row for shortcuts
     buffer << "\033[" << r++ << ";10H [s] Shuffle      : Play a random station";
     buffer << "\033[" << r++ << ";10H [f] Play Fav     : Play a random favorite";
     buffer << "\033[" << r++ << ";10H [l] List Favs    : Open scrollable favorite menu";
@@ -326,7 +351,7 @@ bool draw_help_menu() {
     buffer << "\033[" << r++ << ";10H [c] Config       : Config Manager";
     buffer << "\033[" << r++ << ";10H [q] Quit         : Exit Music Thingy";
 
-    buffer << "\033[" << (r+2) << ";10H Press [b] or [Esc] to return to player...";
+    buffer << get_ui_footer(w.ws_row);
     buffer << RESET;
 
     std::cout << buffer.str() << std::flush;
@@ -358,7 +383,7 @@ void update_metadata_from_url(const std::string& url) {
 
 bool draw_favorites_menu() {
     struct winsize w; ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-    std::string BLUE = "\033[94m", WHITE = "\033[97m", RESET = "\033[0m";
+
     std::stringstream buffer;
 
     // 1. Load favorites
@@ -374,26 +399,28 @@ bool draw_favorites_menu() {
     while (std::getline(infile, line)) if (!line.empty()) favUrls.push_back(line);
 
     // 2. Build UI
-    buffer << "\033[H\033[2J\033[3J" << BLUE;
-    buffer << "\033[6;10H             Music Thingy";
-    buffer << "\033[7;10H[S]huffle | Vol [+/-] | [H]elp | [Q]uit";
-    buffer << "\033[8;10H[j/k] Scroll | [Enter] Play | [b] Back";
+
+    buffer << get_ui_header(w.ws_row);
+
+
+    buffer << "\033[6;10H [j/k] Scroll | [Enter] Play | [b] Back";
 
     int maxVisible = 10;
     if (favUrls.empty()) {
-        buffer << "\033[7;10H  (No favorites saved yet)";
+        buffer << "\033[7;14H  (No favorites saved yet)";
     } else {
         if (selectedFav < scrollOffset) scrollOffset = selectedFav;
         if (selectedFav >= scrollOffset + maxVisible) scrollOffset = selectedFav - maxVisible + 1;
 
         for (int i = 0; i < maxVisible && (i + scrollOffset) < (int)favUrls.size(); ++i) {
             int idx = i + scrollOffset;
-            buffer << "\033[" << (11 + i) << ";10H";
-            if (idx == selectedFav) buffer << WHITE << " > " << favUrls[idx] << BLUE;
+            buffer << "\033[" << (10 + i) << ";10H";
+            if (idx == selectedFav) buffer << BLUE << " > " <<  ORANGE << favUrls[idx] << BLUE;
             else buffer << "   " << favUrls[idx];
         }
     }
 
+    buffer << get_ui_footer(w.ws_row);
     buffer << RESET;
     std::cout << buffer.str() << std::flush;
 
@@ -435,9 +462,6 @@ std::string get_bitrate_text() {
 
 void draw_ui() {
     struct winsize w; ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-    std::string BLUE = "\033[94m", RED = "\033[91m", YELLOW = "\033[33m", GREEN = "\033[38;5;46m", RESET = "\033[0m";
-
-    // This is your 'back buffer'
     std::stringstream buffer;
 
     int mute;
@@ -446,10 +470,8 @@ void draw_ui() {
 
     // Build the frame in memory
     buffer << "\033[H\033[2J\033[3J"; // Full Clear
-    buffer << BLUE; // Set the color to BLUE for everything following
 
-    buffer << "\033[" << (w.ws_row - 21) << ";10H"  "             Music Thingy" << "\n";
-    buffer << "\033[" << (w.ws_row - 20) << ";10H" << "[S]huffle | Vol [+/-] | [H]elp | [Q]uit" << "\n";
+    buffer << get_ui_header(w.ws_row);
 
     if (std::time(nullptr) < statusExpiry) {
         buffer << "\033[" << (w.ws_row - 16) << ";10H" << GREEN << ">> " << statusMsg << "\n" << RESET << BLUE ;
@@ -475,7 +497,7 @@ void draw_ui() {
 
     buffer << "\033[" << (w.ws_row - 8) << ";10H" << " * Vol: " << volColor << get_vol_bar() << "\n";
 
-    buffer << "\033[" << w.ws_row << ";0H" << RED << "Music Thingy~ $: ";
+    buffer << get_ui_footer(w.ws_row);
 
     buffer << RESET;
     // ONE SINGLE WRITE to the physical screen (The 'Swap')
@@ -691,17 +713,12 @@ void send_notification(const std::string& station, const std::string& song) {
 }
 
 bool draw_config_menu() {
-
-
     struct winsize w; ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-
-    std::string BLUE = "\033[94m", WHITE = "\033[97m", RESET = "\033[0m";
     std::stringstream buffer;
 
-    buffer << "\033[H\033[2J\033[3J" << BLUE; // <--- FULL CLEAR AND HOME
-    buffer << "\033[H\033[2J\033[3J" << BLUE;
-    buffer << "\033[6;10H             Music Thingy";
-    buffer << "\033[7;10H[S]huffle | Vol [+/-] | [H]elp | [Q]uit";
+
+
+    buffer << get_ui_header(w.ws_row);
 
     // Define the list of options to display
     struct MenuItem { std::string label; bool* val; };
@@ -713,22 +730,31 @@ bool draw_config_menu() {
 
     int totalItems = items.size() + 1; // Toggles + 1 for Quality
 
-    // 2. Draw standard toggles
+    // 1. Draw standard toggles
     for (int i = 0; i < items.size(); ++i) {
-        buffer << "\033[" << (11 + i) << ";10H";
+        buffer << "\033[" << (12 + i) << ";10H";
         if (i == selectedConfig) buffer << WHITE << " > " << BLUE;
         else buffer << "   ";
-        buffer << items[i].label << ": " << (*(items[i].val) ? "[ON]" : "[OFF]") << BLUE;
+
+        buffer << items[i].label << ": ";
+
+        // COLOR LOGIC FOR ON/OFF
+        if (*(items[i].val)) {
+            buffer << GREEN << "[ON]" << BLUE; // Green if true
+        } else {
+            buffer << RED << "[OFF]" << BLUE;  // Red if false
+        }
     }
 
-    // 3. Draw the Quality Selector row
-    int qIdx = items.size(); // The index for this new row
-    buffer << "\033[" << (11 + qIdx) << ";10H";
+    // 2. Draw the Quality Selector row (High is usually Green, others Yellow/Red)
+    int qIdx = items.size();
+    buffer << "\033[" << (12 + qIdx) << ";10H";
     if (selectedConfig == qIdx) buffer << WHITE << " > " << BLUE;
     else buffer << "   ";
-    buffer << "Audio Quality: [" << cfg.quality << "]" << BLUE;
 
-    // 2. Add the "Note" if Highest is selected
+    buffer << "Audio Quality: [" << GREEN << cfg.quality << BLUE << "]";
+
+    // 3. Add the "Note" if Highest is selected
     if (cfg.quality == "highest") {
         buffer << "\033[" << (4 + qIdx + 2) << ";10H"
         << "\033[93m" << "! Note: 'Highest' may delay notifications" << BLUE;
@@ -1032,6 +1058,13 @@ int main(int argc, char* argv[]) {
 
     end:
     system("stty cooked echo");
+
+    struct winsize w;
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    std::stringstream buffer;
+    buffer << get_ui_footer(w.ws_row) << BLUE << "Good bye! " << RESET << std::endl;
+    std::cout << buffer.str();
+
     if (mpv) mpv_terminate_destroy(mpv);
     return 0;
 }
