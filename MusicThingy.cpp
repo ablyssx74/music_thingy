@@ -677,7 +677,7 @@ void delete_favorite() {
 void send_notification(const std::string& station, const std::string& song) {
 
     // Filter out common URL patterns to prevent "URL notifications"
-    if (song.empty() || song.find("http://") == 0 || song.find("https://") == 0 || song.find("-mp3") != std::string::npos) {
+    if (song.empty() || song.find("http://") == 0 || song.find("https://") == 0 || song.find("-aac") != std::string::npos || song.find("-mp3") != std::string::npos) {
         return;
     }
 
